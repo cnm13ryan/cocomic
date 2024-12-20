@@ -1,751 +1,475 @@
 ## ClassDef BaseCodeContext
-Certainly! Below is a structured documentation format tailored for technical documentation. Please provide the specific details or the target object you would like documented.
+**BaseCodeContext**: Object to hold various parsed code structures such as lines of code, tokens stream, and more.
 
----
+attributes:
+· tree: A parsed Abstract Syntax Tree (AST) represented by a TSTree object.
+· code: The original source code as a string.
+· lang: The programming language of the code as a string.
+· code_bytes: The byte representation of the original source code for validation purposes.
+· parsed_lines: A list that will be populated with CodeLineTokens objects representing lines of code and their associated tokens.
 
-# Documentation Template
+Code Description: BaseCodeContext is designed to encapsulate the structure of parsed code, including its AST, the raw code itself, and metadata about the language. It provides methods for validating token integrity, assigning tokens to specific lines, parsing the entire code into a structured format, iterating over tokens, retrieving specific lines or line ranges, checking for syntax errors, determining the maximum line length, finding the line number of a given token, extracting node text, collecting nodes by type, and more. The class is intended to be extended with language-specific implementations, as indicated by the NotImplemented methods `assign_token_to_line` and `is_code_line`.
 
-## Overview
-Provide a brief overview of the target object, including its purpose and significance within the system or application.
+Note: Usage points include initializing an instance of BaseCodeContext with a parsed AST, source code, and language identifier; parsing the code into structured line-token pairs using `_parse`; iterating over tokens or lines for analysis or transformation; validating token integrity; checking for syntax errors in the code; and extracting specific parts of the code based on node types or line numbers.
 
-## Object Name: [Target Object Name]
-- **Type**: Specify whether it is a class, function, module, etc.
-- **Namespace/Location**: Indicate where this object resides within the codebase (e.g., file path).
+Output Example: A possible appearance of the `parsed_lines` attribute after calling `_parse` could be a list of CodeLineTokens objects, each representing a line of code along with its tokens. For instance:
 
-## Purpose
-Describe the primary function or role of the target object. Explain what problem it solves or what task it performs.
-
-## Key Components/Methods
-List and describe the main components or methods associated with the target object. For each component/method, provide:
-- **Name**: The exact name as used in the code.
-- **Description**: A detailed explanation of its functionality.
-- **Parameters** (if applicable): List all parameters including their types and descriptions.
-- **Return Value** (if applicable): Describe what is returned by the method or function.
-
-## Usage Example
-Provide a simple example demonstrating how to use the target object. Include code snippets where appropriate.
-
-## Dependencies
-List any dependencies that the target object relies on, such as other classes, modules, libraries, or system requirements.
-
-## Error Handling
-Describe how errors are handled within the target object. Mention specific error types and their corresponding handling mechanisms.
-
-## Notes/Considerations
-Include any additional information that might be relevant to users of the target object, such as performance considerations, limitations, or best practices for usage.
-
----
-
-Please provide the necessary details about the target object so that this template can be filled out accurately and comprehensively.
+[
+    CodeLineTokens(line_no=0, tokens=[Token(node=<TSNode object>, code_bytes=b'def foo():')], text='def foo():'),
+    CodeLineTokens(line_no=1, tokens=[Token(node=<TSNode object>, code_bytes=b'    return 42')], text='    return 42')
+]
 ### FunctionDef __init__(self, tree, code, lang)
-### Function Overview
-**__init__**: Initializes a `BaseCodeContext` instance with a parsed Abstract Syntax Tree (AST) tree, source code as a string, and the programming language of the code.
+**__init__**: Initializes a new instance of BaseCodeContext, setting up essential attributes necessary for processing source code.
 
-### Parameters
-- **tree**: An instance of `TSTree`, representing the parsed Abstract Syntax Tree of the code. This parameter is essential for structural analysis and manipulation.
-- **code**: A string containing the original source code. It serves as the raw input from which the AST was generated.
-- **lang**: A string indicating the programming language of the provided code, used for context-specific processing.
+parameters:
+· tree: A TSTree object representing the parsed Abstract Syntax Tree (AST) of the source code.
+· code: A string containing the raw source code.
+· lang: A string indicating the programming language of the source code.
 
-### Return Values
-This function does not return any values. Its purpose is to initialize the state of a `BaseCodeContext` instance with the provided parameters and perform initial setup operations.
+Code Description: The __init__ method is a constructor that initializes several key attributes for an instance of BaseCodeContext. It takes three parameters: tree, code, and lang. The 'tree' parameter is expected to be a TSTree object which represents the parsed AST of the provided source code. This AST can be used for various analyses such as syntax checking, refactoring, or static analysis.
 
-### Detailed Explanation
-The `__init__` method performs several initialization tasks:
-1. **Assignments**: It assigns the provided `tree`, `code`, and `lang` parameters to corresponding instance variables.
-2. **Byte Conversion**: Converts the source code string into bytes using UTF-8 encoding, storing it in `self.code_bytes`. This conversion is primarily for validation purposes.
-3. **List Initialization**: Initializes an empty list `self.parsed_lines`, which is intended to be populated with parsed lines of code by implementing classes or methods later.
+The 'code' parameter is a string that holds the raw source code. This attribute will be stored directly in the instance and also converted to bytes using UTF-8 encoding, which is stored in the 'code_bytes' attribute. The conversion to bytes is primarily for validation purposes, allowing for byte-level comparisons or operations if needed.
 
-### Relationship Description
-- **referencer_content**: Not provided; no specific information about callers within the project.
-- **reference_letter**: Not provided; no specific information about callees within the project.
-  
-Since neither `referencer_content` nor `reference_letter` is truthy, there is no functional relationship to describe in terms of internal project interactions.
+The 'lang' parameter specifies the programming language of the source code as a string. This information can be crucial for applying language-specific rules and functionalities during further processing.
 
-### Usage Notes and Refactoring Suggestions
-- **Validation Purpose**: The conversion of `code` to bytes (`self.code_bytes`) is noted for validation purposes. If this functionality is not utilized elsewhere, consider removing it or documenting its specific use case.
-- **Encapsulation**: Directly exposing `parsed_lines` as a public list can lead to issues with encapsulation and maintainability. Consider using getter/setter methods or properties to control access and modification of `parsed_lines`.
-- **Initialization Logic**: The initialization logic is straightforward but could be expanded if additional setup steps are required in the future.
-  
-**Refactoring Suggestions**:
-- **Encapsulate Collection**: To improve encapsulation, consider converting `self.parsed_lines` into a private attribute with controlled access methods. This can prevent external modification and enhance maintainability.
+Additionally, an empty list named 'parsed_lines' is initialized in this method. This list is intended to store parsed lines of code but remains empty at the time of initialization. It will likely be populated with data by methods implemented elsewhere in the class hierarchy or subclasses.
 
-By following these guidelines and suggestions, developers can ensure that the `BaseCodeContext` class remains robust, maintainable, and adaptable to future changes.
+Note: When creating a new instance of BaseCodeContext, ensure that you provide a valid TSTree object for 'tree', the actual source code as a string for 'code', and the correct language identifier for 'lang'. The 'parsed_lines' attribute is initialized but not used within this method; it serves as a placeholder for future use.
 ***
 ### FunctionDef validate_token(node, line_text, code_bytes)
-**Function Overview**: The `validate_token` function is designed to verify the integrity of a token by comparing its byte span and line span representations.
+**validate_token**: This function checks the integrity of a token by comparing its text representation extracted from two different sources: one derived from line text and another from byte positions within the entire code.
 
-**Parameters**:
-- **node (TSNode)**: Represents the syntax tree node associated with the token being validated.
-- **line_text (str)**: The text content of the line in which the token resides.
-- **code_bytes (bytes)**: The full source code represented as bytes, used to extract the byte span of the token.
+parameters:
+· node: An instance of TSNode representing the syntax tree node corresponding to the token being validated.
+· line_text: A string containing the full text of the line where the token resides.
+· code_bytes: A bytes object representing the complete source code, used for extracting the token's byte span.
 
-**Return Values**: This function does not return any value. It performs an integrity check and logs a debug message if there is a discrepancy between the byte span and line span representations of the token.
+Code Description: The function begins by extracting the start and end points (line numbers and character positions) from the node. It then calculates the corresponding byte positions within the entire code. Using these positions, it slices both the line text and the full code bytes to obtain the substring or subsequence of bytes that represent the token in each context.
 
-**Detailed Explanation**:
-The `validate_token` function begins by extracting the start and end points (line numbers and character positions) from the `node`. These points are used to determine both the line span and byte span of the token. The line span is derived directly from the `line_text`, while the byte span is extracted from the `code_bytes`.
+The function compares the byte representation of the token extracted from its line (converted to bytes) with the byte representation directly sliced from the full code. If they do not match, it indicates a discrepancy between the node's reported positions and the actual content at those positions within the code. This could suggest an error in parsing or data corruption.
 
-The function then compares the byte representation of the token obtained from `code_bytes` with the byte representation derived from slicing `line_text`. If these two representations do not match, it indicates a discrepancy in how the token is represented within the line and its corresponding bytes. The function logs this discrepancy as a debug message if the node spans only one line.
+If the mismatch occurs on a single line (start_line_no equals end_line_no), the function logs this as a debug message, providing details about the node, its byte span, its line span, and the full line text for further inspection.
 
-**Relationship Description**:
-The `validate_token` function is called by `_parse`, which is part of the same class (`BaseCodeContext`). This relationship indicates that `_parse` utilizes `validate_token` to ensure the integrity of tokens during the parsing process. The `_parse` method processes each token node, aligns it with its corresponding line, and validates it using `validate_token`.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Logging Enhancements**: Currently, the debug message provides limited context about the discrepancy. Enhancing this message to include more details (such as exact byte positions or the mismatched text) could aid in debugging.
-- **Error Handling**: The function currently logs a debug message but does not handle discrepancies further. Depending on the application's requirements, it might be beneficial to raise an exception or take corrective action when a discrepancy is detected.
-- **Extract Method**: If additional validation logic needs to be added (e.g., handling multiline nodes), consider extracting this into separate methods for better readability and maintainability.
-- **Introduce Explaining Variable**: For the comparison between `line_span_text` and `bytes_span_text`, introducing an explaining variable could make the code more readable. For example, a variable named `is_token_valid` could be used to store the result of the comparison.
-
-By implementing these suggestions, the function can become more robust, maintainable, and easier to understand.
+Note: The validate_token function is called within the _parse method of BaseCodeContext. This method processes each token in the syntax tree to ensure that all tokens are correctly aligned with their respective lines in the source code and that their positions are accurately reported by the syntax tree nodes. By validating each token, the system ensures data consistency and reliability during parsing and transformation phases.
 ***
 ### FunctionDef is_multiline_token(token)
-**Function Overview**:  
-The `is_multiline_token` function determines whether a given token spans multiple lines in the source code.
+**is_multiline_token**: This function determines whether a given token spans multiple lines within the source code.
 
-**Parameters**:
-- **token**: An instance of the `Token` class, representing a node in the syntax tree generated by tree-sitter. This parameter is used to extract start and end line numbers for the token.
-  - **referencer_content**: True
-  - **reference_letter**: False
+parameters:
+· token: An instance of the Token class, which encapsulates a tree-sitter Node representing a syntax tree node and provides additional properties for easier manipulation and access of token data.
 
-**Return Values**:
-- The function returns a boolean value: `True` if the token spans multiple lines, otherwise `False`.
+Code Description: The function takes a single parameter, `token`, which is an object of the Token class. It retrieves the starting line number (`start_line_no`) and ending line number (`end_line_no`) from the `node` attribute of the token. These values are accessed via the `start_point[0]` and `end_point[0]` properties of the node, respectively. The function then checks if these two line numbers are different. If they are, it indicates that the token spans across multiple lines, and the function returns `True`. Otherwise, it returns `False`, indicating that the token is contained within a single line.
 
-**Detailed Explanation**:  
-The `is_multiline_token` function checks whether a token starts and ends on different lines. It retrieves the start line number (`start_line_no`) and end line number (`end_line_no`) from the `token.node.start_point[0]` and `token.node.end_point[0]`, respectively. If these two values are not equal, it indicates that the token spans across multiple lines, and the function returns `True`. Otherwise, it returns `False`.
+Note: This function is particularly useful in scenarios where understanding the physical layout of tokens in the source code is necessary, such as when analyzing or transforming code structures. It can be used to identify multi-line strings, comments, or other constructs that extend across multiple lines.
 
-**Relationship Description**:  
-The `is_multiline_token` function is referenced by other components within the project as a caller:
-- **Callers**: 
-  - Methods or functions in the same module or elsewhere in the project that need to determine if tokens are multiline can call this function.
-
-**Usage Notes and Refactoring Suggestions**:  
-- **Limitations**: The current implementation assumes that `token.node.start_point` and `token.node.end_point` provide accurate line numbers. If there are issues with how these points are calculated or retrieved, the accuracy of `is_multiline_token` could be affected.
-- **Edge Cases**: Consider edge cases such as tokens that start and end on the same line but have different column positions. The function correctly identifies these as single-line tokens, which is appropriate behavior.
-- **Refactoring Suggestions**:
-  - **Introduce Explaining Variable**: For clarity, consider storing `start_line_no` and `end_line_no` in named variables before comparing them. This can make the code easier to read and maintain.
-    ```python
-    def is_multiline_token(token: Token):
-        start_line_no = token.node.start_point[0]
-        end_line_no = token.node.end_point[0]
-        lines_differ = start_line_no != end_line_no
-        return lines_differ
-    ```
-  - **Extract Method**: If this function becomes part of a larger method that includes multiple checks on tokens, consider extracting it into its own method to improve separation of concerns.
-- Highlight other refactoring opportunities to reduce code duplication and enhance flexibility for future changes. Ensuring the function remains focused on determining multiline status aids in maintaining clean and understandable code.
-
-This documentation provides a clear, formal explanation of the `is_multiline_token` function's purpose, parameters, return values, logic, relationships within the project, and potential areas for improvement.
+Output Example: If the token represents a string literal that starts on line 10 and ends on line 12, `is_multiline_token(token)` would return `True`. Conversely, if the token is a single keyword like "def" located entirely on line 5, the function would return `False`.
 ***
 ### FunctionDef assign_token_to_line(self, node, line_tokens)
-### Function Overview
-**`assign_token_to_line`**: This function is designed to implement a language-specific strategy for assigning tokens to their corresponding lines within a source code file.
+**assign_token_to_line**: This function is designed to implement a language-specific strategy for assigning tokens to their corresponding lines within a source code file. It takes a node from a syntax tree and a dictionary mapping line numbers to lists of tokens, then assigns tokens to lines based on the specific rules defined by the programming language being processed.
 
-### Parameters
-- **node (`TSNode`)**: Represents a node in the syntax tree of the parsed source code. It serves as the starting point for token assignment.
-- **line_tokens (`Dict[int, List]`)**: A dictionary where keys are line numbers and values are lists of tokens that belong to those lines.
+**parameters**:
+· node: A TSNode object representing a node in the syntax tree. This node contains information about a particular element in the source code.
+· line_tokens: A dictionary where keys are line numbers (integers) and values are lists of tokens that belong to those lines. Tokens are represented as elements within these lists.
 
-### Return Values
-- This function does not return any value explicitly. Instead, it modifies the `line_tokens` dictionary in place by adding tokens to their respective lines based on the node provided.
+**Code Description**: The function is currently defined with a placeholder implementation that raises a `NotImplemented` error, indicating that it needs to be overridden by subclasses in order to provide the specific logic for token assignment based on the programming language being analyzed. This design allows for flexibility and extensibility, as different languages may have varying rules about how tokens are associated with lines of code.
 
-### Detailed Explanation
-The `assign_token_to_line` function is intended to be overridden by subclasses of `BaseCodeContext`. It currently raises a `NotImplementedError`, indicating that any subclass must provide its own implementation for this method. The purpose of this method is to align tokens in the syntax tree with their corresponding lines in the source code, which is crucial for tasks such as syntax highlighting or static analysis.
+The function is called within the `_parse` method of the `BaseCodeContext` class. In this context, it is used to traverse a syntax tree (starting from its root node) and populate the `line_tokens` dictionary by assigning each token in the tree to its corresponding line number based on the language-specific rules implemented in the subclass.
 
-### Relationship Description
-- **Referencer Content**: The function `assign_token_to_line` is called by `_parse` within the same class (`BaseCodeContext`). This method constructs a dictionary mapping line numbers to tokens and uses `assign_token_to_line` to populate this dictionary.
-- **Reference Letter**: There are no other callees mentioned in the provided references.
+The `_parse` method first initializes an empty dictionary for `line_tokens` and splits the source code into lines. It then calls `assign_token_to_line`, passing the root node of the syntax tree and the `line_tokens` dictionary as arguments. After this, it ensures that all lines, including those without tokens (such as empty lines), are represented in the `line_tokens` dictionary. The method then sorts the line tokens by line number, validates each token's position within its respective line, creates a list of `Token` objects for each line, and finally constructs a list of `CodeLineTokens` objects that encapsulate all the information about each line of code.
 
-### Usage Notes and Refactoring Suggestions
-- **Current State**: The function is abstract and raises an error, indicating that it must be implemented by subclasses. This design follows the template method pattern, allowing for language-specific token assignment strategies.
-- **Limitations**:
-  - Since this function is abstract, its behavior depends entirely on how it is implemented in subclasses. Ensuring consistent behavior across different languages requires careful implementation and testing.
-  - The current design does not provide any default or fallback mechanism if a subclass fails to implement `assign_token_to_line`.
-- **Refactoring Suggestions**:
-  - **Replace Conditional with Polymorphism**: If there are multiple conditional branches based on the type of language, consider using polymorphism. Create subclasses for each language and override `assign_token_to_line` in each subclass.
-  - **Encapsulate Collection**: Instead of modifying the `line_tokens` dictionary directly within this method, consider returning a list of tokens from `assign_token_to_line`, and then updating the dictionary in `_parse`. This can improve encapsulation and make the function easier to test.
-  - **Introduce Explaining Variable**: If the logic for determining which line a token belongs to is complex, introduce explaining variables to clarify the steps involved. For example, if there are calculations or checks based on node positions, assign intermediate results to named variables.
-
-By adhering to these guidelines and suggestions, developers can enhance the maintainability and readability of the codebase while ensuring that language-specific token assignment strategies are correctly implemented.
+**Note**: Usage points include any subclass of `BaseCodeContext` where this method is implemented to provide language-specific token assignment logic. This function is crucial for parsing source code into a structured format that can be analyzed or transformed further, making it an essential part of the code extraction and transformation process.
 ***
 ### FunctionDef _parse(self)
-Certainly. Please provide the specific target object or section of the code you would like documented, and I will adhere to the guidelines provided to create formal, clear, and accurate technical documentation.
+**_parse**: This function processes the source code by parsing it into a structured format where each line of code is associated with its corresponding tokens. It ensures that all tokens are correctly aligned with their respective lines and validates their positions within the source code.
+
+parameters:
+· None: The _parse method does not take any parameters directly but operates on attributes of the BaseCodeContext instance, such as `self.code`, `self.tree.root_node`, and `self.code_bytes`.
+
+**Code Description**: The function begins by initializing a dictionary `line_tokens` to map line numbers to lists of tokens. It then splits the source code into individual lines using the newline character `\n`. 
+
+Next, it calls the `assign_token_to_line` method, passing the root node of the syntax tree and the `line_tokens` dictionary. This method is intended to populate `line_tokens` with tokens assigned to their respective lines based on language-specific rules.
+
+The function then iterates over all line numbers in `line_texts`. If a line number does not exist as a key in `line_tokens`, it means that no tokens were collected for that line, likely because the line is empty. In such cases, an empty list is inserted into `line_tokens` for that line number.
+
+After ensuring all lines are represented in `line_tokens`, the function sorts the dictionary items by line number to maintain order. It then iterates over these sorted items, extracting the text of each line and creating a list of tokens for that line. For each token node associated with a line, it calls the `validate_token` method to ensure the token's start and end positions are consistent with its byte location within the source code. If validation passes, a Token object is created and added to the list of tokens for that line.
+
+Finally, the function constructs a list of CodeLineTokens objects, each representing a line of code along with its associated tokens and text. It asserts that the number of parsed lines matches the total number of lines in the source code before returning this list.
+
+**Note**: This method is crucial for parsing source code into a structured format that can be analyzed or transformed further. It ensures data consistency by validating token positions and handles empty lines appropriately. The function is called within the constructor of subclasses like PythonCodeContext to parse the source code after syntax tree construction.
+
+**Output Example**: A possible appearance of the return value could be:
+```
+[
+    CodeLineTokens(line_no=0, tokens=[Token('def'), Token(' '), Token('my_function')], text='def my_function'),
+    CodeLineTokens(line_no=1, tokens=[], text=''),
+    CodeLineTokens(line_no=2, tokens=[Token('('), Token(')'), Token(':')], text='():')
+]
+```
+This example shows a parsed representation of three lines of Python code, where the second line is empty. Each `CodeLineTokens` object contains the line number, a list of `Token` objects representing the tokens in that line, and the full text of the line.
 ***
 ### FunctionDef iter_token(tokenized_code_lines)
-**Function Overview**: The `iter_token` function is designed to iterate through a list of tokenized code lines and yield tokens under specific conditions.
+**iter_token**: This function iterates over a list of tokenized code lines, yielding tokens under specific conditions related to their node attributes.
 
-**Parameters**:
-- **tokenized_code_lines (List[CodeLineTokens])**: A list of objects where each object contains a collection of tokens. Each token represents a lexical element from the source code.
-  - **referencer_content**: True
-  - **reference_letter**: True
+**parameters**:
+· tokenized_code_lines: A list of CodeLineTokens objects, where each object contains a sequence of tokens from a line of code.
 
-**Return Values**:
-- Yields individual `token` objects that meet the condition specified within the function.
+**Code Description**: The function `iter_token` processes a list of tokenized code lines. It maintains a reference to the previous token (`prev`) as it iterates through each token in every `CodeLineTokens` object within the provided list. For each token, if `prev` is not None and the node attribute of the current token differs from that of `prev`, the function yields the current token. This mechanism ensures that tokens are yielded only when there is a change in their node attribute compared to the previous token, which can be useful for filtering or processing tokens based on structural changes in the code.
 
-**Detailed Explanation**:
-The `iter_token` function processes a list of `CodeLineTokens`, which are presumably structured to contain tokens from lines of code. It iterates through each `CodeLineTokens` object and then through each token within those objects. The primary logic involves checking if the current token's node differs from that of the previous token (`prev`). If they differ, indicating a change in the node context (which could represent different syntactic or semantic contexts), the function yields the current token.
-
-**Relationship Description**:
-- **Callers**: The `iter_token` function is called by two methods within the same class (`BaseCodeContext`):
-  - `tokens`: This method retrieves all tokens from the parsed lines of code by invoking `iter_token`.
-  - `tokens_from_line_no`: This method retrieves tokens starting from a specified line number by also calling `iter_token` with a sliced list of parsed lines.
-- **Callees**: The function does not call any other functions or methods directly.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Edge Cases**: Consider edge cases such as an empty list of tokenized code lines, where the function should gracefully handle without yielding any tokens. Also, ensure that `CodeLineTokens` objects are correctly structured with a `tokens` attribute and each token has a `node` attribute.
-- **Refactoring Suggestions**:
-  - **Introduce Explaining Variable**: If the condition `prev is not None and prev.node != token.node` becomes more complex, consider breaking it into an explaining variable to improve readability.
-    ```python
-    node_changed = (prev is not None) and (prev.node != token.node)
-    if node_changed:
-        yield token
-    ```
-  - **Guard Clause**: If additional conditions are added in the future, use guard clauses to handle special cases early in the function for better flow control and readability.
-- **Encapsulation**: Ensure that `CodeLineTokens` and its attributes (`tokens`, `node`) are encapsulated properly within their respective classes to prevent direct access and potential misuse.
-
-By adhering to these guidelines and suggestions, the `iter_token` function can be made more robust, maintainable, and easier to understand.
+**Note**: The function is utilized by methods such as `tokens` and `tokens_from_line_no` within the `BaseCodeContext` class. These methods call `iter_token` with specific slices of parsed lines to retrieve all tokens or tokens from a certain line, respectively. This setup allows for flexible token retrieval based on different requirements in code analysis or transformation tasks.
 ***
 ### FunctionDef tokens(self)
-### Function Overview
-**`tokens`**: This function retrieves all tokens from a stream by leveraging the `iter_token` method.
+**tokens**: This function retrieves all tokens from a stream of parsed lines by utilizing the `iter_token` method.
+parameters:
+· None: The `tokens` method does not accept any parameters directly; it operates on the instance's `parsed_lines` attribute.
 
-### Parameters
-- **referencer_content**: True. The `tokens` function is referenced and called by other components within the project to obtain token streams.
-- **reference_letter**: False. There are no references or calls made to external parts of the project from this function.
+Code Description: The `tokens` method is designed to provide access to all tokens within a code context. It achieves this by invoking the `iter_token` function with the `parsed_lines` attribute of the current instance as its argument. The `parsed_lines` attribute is expected to be a list of `CodeLineTokens` objects, each representing a line of code that has been tokenized. By passing these lines to `iter_token`, the method effectively iterates through all tokens in the context, yielding them under conditions specified by `iter_token`. This setup allows for efficient and flexible retrieval of tokens based on structural changes in the code.
 
-### Return Values
-- Returns an iterable sequence of tokens extracted from the parsed lines of code using the `iter_token` method.
+Note: The `tokens` method is particularly useful when a comprehensive list of tokens is required for further analysis or transformation tasks. It leverages the functionality provided by `iter_token`, which filters tokens based on changes in their node attributes, ensuring that only relevant tokens are yielded.
 
-### Detailed Explanation
-The `tokens` function serves as a high-level interface for accessing all tokens in a given stream. It internally utilizes the `iter_token` method to process and yield tokens from the `parsed_lines` attribute, which is expected to contain structured tokenized data representing lines of code.
+Output Example: Assuming the `parsed_lines` attribute contains tokenized lines from a simple Python function definition, the output might look like this:
 
-### Relationship Description
-- **Callers**: The `tokens` function is called by other methods within the same class (`BaseCodeContext`) or potentially by external components that require access to all tokens in a parsed code stream. Notably, it is used directly for retrieving all tokens without any specific line number constraints.
-- **Callees**: This function calls the `iter_token` method with its internal `parsed_lines` attribute as an argument.
+```
+def
+my_function
+(
+param1
+:
+int
+)
+:
+return
+param1
++
+1
+``` 
 
-### Usage Notes and Refactoring Suggestions
-- **Edge Cases**: Consider scenarios where `parsed_lines` might be empty or improperly structured. The function should handle such cases gracefully without causing errors.
-- **Refactoring Suggestions**:
-  - **Extract Method**: If additional functionality is added to the `tokens` method, consider extracting parts of its logic into separate methods to improve modularity and readability.
-    ```python
-    def tokens(self):
-        tokenized_lines = self.get_tokenized_lines()
-        return self.iter_token(tokenized_lines)
-
-    def get_tokenized_lines(self):
-        # Logic to ensure parsed_lines is correctly formatted and accessible
-        return self.parsed_lines
-    ```
-  - **Simplify Conditional Expressions**: If the `iter_token` method's logic becomes more complex, consider simplifying conditional expressions within it for better readability.
-  - **Encapsulate Collection**: Ensure that the internal collection (`parsed_lines`) is properly encapsulated to prevent direct access and potential misuse. This can be achieved by providing controlled methods for accessing or modifying the collection.
-
-By adhering to these guidelines and suggestions, the `tokens` function can be made more robust, maintainable, and easier to understand within its context.
+Each of these elements would be yielded as individual tokens by the `tokens` method, provided they meet the conditions set in the `iter_token` function.
 ***
 ### FunctionDef tokens_from_line_no(self, line_no)
-**Function Overview**: The `tokens_from_line_no` function retrieves tokens starting from a specified line number by leveraging the `iter_token` method.
+**tokens_from_line_no**: This function retrieves tokens starting from a specified line number within the context of a parsed code file.
+parameters:
+· line_no: An integer representing the line number from which to start retrieving tokens.
 
-**Parameters**:
-- **line_no (int)**: An integer representing the line number from which to start retrieving tokens. This parameter indicates the position in the list of parsed lines from which token extraction should begin.
-  - **referencer_content**: True
-  - **reference_letter**: False
+Code Description: The `tokens_from_line_no` method is designed to fetch tokens from a specific line in a parsed code document. It leverages the `iter_token` function, passing it a slice of the `parsed_lines` attribute starting from the specified `line_no`. This allows for efficient retrieval of tokens beginning at any given line, facilitating targeted analysis or transformation tasks.
 
-**Return Values**:
-- Returns an iterator that yields individual `token` objects starting from the specified line number.
+The method assumes that `self.parsed_lines` is a list where each element corresponds to a line in the parsed code and contains tokenized information about that line. By slicing this list starting from `line_no`, it effectively narrows down the scope of tokens to be processed by `iter_token`.
 
-**Detailed Explanation**:
-The `tokens_from_line_no` function is designed to provide a subset of tokens starting from a specific line in the source code. It achieves this by slicing the `parsed_lines` attribute of the class instance, which contains tokenized lines of code, beginning at the index specified by `line_no`. The sliced list is then passed to the `iter_token` method, which processes each token and yields those that meet certain conditions.
+Note: This function is particularly useful when developers need to analyze or manipulate specific sections of code rather than processing the entire document at once. It integrates seamlessly with other methods in the `BaseCodeContext` class that handle token retrieval and manipulation.
 
-**Relationship Description**:
-- **Callers**: This function is called by other components within the project to retrieve tokens starting from a specific line number. It acts as an intermediary between higher-level methods and the detailed token iteration logic encapsulated in `iter_token`.
-- **Callees**: The function calls `iter_token`, which handles the actual iteration and filtering of tokens based on their node attributes.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Edge Cases**: Consider edge cases such as when `line_no` exceeds the length of `parsed_lines`. In such scenarios, the slice operation will return an empty list, and thus no tokens will be yielded. Ensure that this behavior is acceptable or handle it explicitly if necessary.
-- **Refactoring Suggestions**:
-  - **Guard Clause**: If additional conditions are added in the future to filter lines before token iteration, consider using guard clauses to handle special cases early in the function for better flow control and readability.
-    ```python
-    if line_no >= len(self.parsed_lines):
-        return iter([])  # or some other appropriate handling
-    ```
-  - **Encapsulation**: Ensure that `parsed_lines` is encapsulated properly within its class to prevent direct access and potential misuse. This can be achieved by making it a private attribute (e.g., `_parsed_lines`) and providing controlled access through methods.
-- **Code Clarity**: The current implementation relies on the slicing of `parsed_lines`. While this is concise, adding comments or assertions could improve clarity for future developers.
-    ```python
-    def tokens_from_line_no(self, line_no):
-        """
-        Retrieve tokens from a certain line number.
-
-        Args:
-            line_no (int): Line number to start token retrieval from.
-
-        Returns:
-            Iterator: An iterator that yields individual `token` objects starting from the specified line number.
-        """
-        assert 0 <= line_no < len(self.parsed_lines), "line_no must be within the bounds of parsed_lines"
-        return self.iter_token(self.parsed_lines[line_no:])
-    ```
-
-By adhering to these guidelines and suggestions, the function can remain robust, maintainable, and easy to understand for future developers.
+Output Example: If `parsed_lines` contains tokenized information for lines 1 through 10, calling `tokens_from_line_no(5)` would result in an iterator yielding tokens from line 5 to line 10. The exact output depends on the content of these lines and how they are tokenized.
 ***
 ### FunctionDef lines(self)
-**Function Overview**: The `lines` function is designed to **retrieve all lines** from a parsed context, yielding each line's number and text.
+**lines**: Retrieve all lines from the parsed content.
+parameters:
+· None: This function does not accept any parameters.
 
-**Parameters**:
-- **referencer_content**: This parameter indicates if there are references (callers) from other components within the project to this component. In this case, it is truthy as `num_preceding_chars` in `BaseFunction` calls `lines`.
-- **reference_letter**: This parameter shows if there is a reference to this component from other project parts, representing callees in the relationship. Here, it is also truthy due to the call from `num_preceding_chars`.
+Code Description: The `lines` method is a generator function designed to yield each line of code along with its corresponding line number from the parsed content stored in `self.parsed_lines`. It iterates over each element in `self.parsed_lines`, where each element (`clt`) represents a line of code. For each iteration, it yields a tuple containing two elements: `clt.line_no` (the line number) and `clt.text` (the text content of the line). This method is useful for accessing lines of code in an iterative manner without loading all lines into memory at once.
 
-**Return Values**:
-- The function yields tuples where each tuple contains two elements: `line_no` (the line number) and `clt.text` (the text of that line).
-
-**Detailed Explanation**:
-The `lines` function iterates over a list named `parsed_lines`, which presumably contains objects representing lines of code. Each object (`clt`) in this list has at least two attributes: `line_no` for the line number and `text` for the content of the line. The function uses a generator to yield these tuples, allowing it to be used in loops or other contexts that expect an iterable.
-
-**Relationship Description**:
-The `lines` function is referenced by `num_preceding_chars` in `BaseFunction`. This relationship indicates that `lines` serves as a source of data for calculating the number of characters preceding a specific line number (`start_line_no`). The caller, `num_preceding_chars`, uses this data to sum up the lengths of all lines before the specified start line.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Encapsulate Collection**: Currently, `lines` exposes an internal collection directly through iteration. While this is not inherently problematic, encapsulating access to `parsed_lines` could provide more control over how the data is accessed or modified in the future.
-- **Extract Method**: If additional functionality related to line processing is added, consider extracting such logic into separate methods for better modularity and readability.
-- **Simplify Conditional Expressions**: Although there are no conditionals in this specific function, if any were introduced (e.g., filtering lines based on certain criteria), using guard clauses could improve the clarity of these expressions.
-
-By adhering to these suggestions, developers can maintain a clean, modular codebase that is easier to extend and understand.
+Note: The `lines` function is utilized by other parts of the system, such as in the `num_preceding_chars` method of the `BaseFunction` class. In this context, it helps to calculate the total number of characters that appear before a specific function definition starts by iterating through lines until reaching the start line number of the function. This demonstrates how `lines` can be used to perform operations that require sequential access to code lines while maintaining efficiency by not loading all lines into memory simultaneously.
 ***
 ### FunctionDef num_of_lines(self)
-**Function Overview**: The `num_of_lines` function is designed to return the number of lines present in a parsed document or code snippet.
+**num_of_lines**: This function returns the total number of lines present in the parsed source code stored within an instance of BaseCodeContext.
+parameters:
+· None: The function does not accept any parameters.
 
-**Parameters**:
-- **referencer_content**: This parameter indicates if there are references (callers) from other components within the project to this component. *(Not applicable in provided code)*
-- **reference_letter**: This parameter shows if there is a reference to this component from other project parts, representing callees in the relationship. *(Not applicable in provided code)*
+Code Description: The num_of_lines method is a simple property-like function designed to provide quick access to the count of lines that have been parsed and are currently stored in the self.parsed_lines attribute. This attribute is expected to be a list where each element represents a line from the source code being analyzed or processed. By using the len() function on this list, num_of_lines efficiently calculates and returns the number of elements (lines) it contains.
 
-**Return Values**:
-- The function returns an integer value representing the number of lines in `self.parsed_lines`.
+Note: Usage points include scenarios where developers need to know the total number of lines in a parsed file for metrics, analysis, or validation purposes. This method provides a straightforward way to retrieve this information without needing to manually count the lines.
 
-**Detailed Explanation**:
-The `num_of_lines` function calculates and returns the length of the list `self.parsed_lines`. This implies that `self.parsed_lines` is expected to be a list where each element corresponds to a line from a parsed document or code snippet. The function leverages Python's built-in `len()` function to determine the number of elements in this list, which directly translates to the number of lines.
-
-**Relationship Description**:
-- Neither `referencer_content` nor `reference_letter` is provided as truthy values, indicating that there is no functional relationship or references described for the `num_of_lines` function within the context of the given project structure. Therefore, no specific relationships with other components can be detailed based on the current information.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Limitations**: The function assumes that `self.parsed_lines` is a list. If `self.parsed_lines` is not initialized as a list or is of another type, this will result in an error.
-- **Edge Cases**: Consider scenarios where `self.parsed_lines` might be empty (i.e., no lines parsed). The function correctly returns 0 in such cases, which aligns with the expected behavior.
-- **Refactoring Suggestions**:
-  - **Encapsulate Collection**: If other parts of the code frequently interact with `self.parsed_lines`, consider encapsulating it within a method or property to control access and ensure consistency. This can prevent external modifications that might lead to incorrect assumptions about the state of `self.parsed_lines`.
-  - **Introduce Explaining Variable**: Although not directly applicable here, if the function were more complex (e.g., involved additional calculations before returning the length), introducing an explaining variable could improve readability by giving a meaningful name to intermediate results.
-  
-This documentation provides a clear understanding of the `num_of_lines` function's purpose, behavior, and potential areas for improvement within the context provided.
+Output Example: If self.parsed_lines contains ['def function():', '    return 1', '# comment'], then calling num_of_lines() would return 3, indicating there are three lines in the parsed source code.
 ***
 ### FunctionDef syntax_error(self)
-**Function Overview**: The `syntax_error` function checks whether there is a syntax error in the Abstract Syntax Tree (AST) represented by the current instance.
+**syntax_error**: This function checks whether there is a syntax error present in the Abstract Syntax Tree (AST) of the parsed code.
+parameters:
+· None: The function does not accept any parameters.
 
-**Parameters**:
-- **referencer_content**: This parameter indicates if there are references (callers) from other components within the project to this component. In this case, it is truthy as `syntax_error` is called by `collect_file_context` and `PythonCodeContext`.
-- **reference_letter**: This parameter shows if there is a reference to this component from other project parts, representing callees in the relationship. It is also truthy for the same reasons mentioned above.
+Code Description: The `syntax_error` method performs a depth-first search (DFS) on the AST to identify if any node has a type marked as "ERROR", which indicates a syntax error. It starts from the root node and recursively checks each child node. If it finds an "ERROR" type node, it immediately returns True, indicating that there is a syntax error in the code. The function handles exceptions, particularly those related to exceeding the maximum recursion depth, by returning True as well, assuming such cases are indicative of parsing issues.
 
-**Return Values**:
-- The function returns a boolean value: `True` if a syntax error is detected in the AST, otherwise `False`.
+Note: This method is crucial for determining if parsed code contains syntax errors before proceeding with further analysis or transformations. It is used in contexts where valid ASTs are required for operations like file-level context extraction and initializing Python code contexts.
 
-**Detailed Explanation**:
-The `syntax_error` method performs a depth-first search (DFS) on the AST to identify nodes marked as "ERROR". It starts from the root node and recursively checks each child node. If any node has a type of "ERROR", it indicates a syntax error in that part of the code, and the function returns `True`. The recursion continues until all nodes are checked or an error is found. An exception handler at the end catches any errors that might occur during this process, such as exceeding the maximum recursion depth, which also results in returning `True`.
-
-**Relationship Description**:
-- **Callers**: 
-  - `collect_file_context` from `ccfinder/cc_extractor/collect_project_context.py`: This function uses `syntax_error` to determine if a file contains syntax errors before proceeding with further processing. If a syntax error is detected, the file is skipped.
-  - `PythonCodeContext` from `ccfinder/cc_extractor/transform/python/context.py`: The constructor of this class checks for syntax errors using `syntax_error`. If an error is found, it logs a message and does not proceed to parse the lines of code.
-
-- **Callees**: 
-  - The function internally calls itself recursively as part of its DFS algorithm (`dfs_check`).
-
-**Usage Notes and Refactoring Suggestions**:
-- **Limitations and Edge Cases**: The current implementation may encounter issues with very deep ASTs due to Python's recursion limit, which is caught by the exception handler. This could be improved by converting the recursive approach to an iterative one using a stack.
-- **Refactoring Opportunities**:
-  - **Replace Conditional with Polymorphism**: If there are multiple types of errors that need to be handled differently, consider using polymorphism to handle each type separately.
-  - **Simplify Conditional Expressions**: The current implementation uses recursion and exception handling. A more straightforward approach could involve iterative traversal and explicit error checking, which might improve readability.
-  - **Introduce Explaining Variable**: For the `if node.type == "ERROR":` condition, an explaining variable can be introduced to make it clear what is being checked (e.g., `is_error_node = node.type == "ERROR"`).
-  - **Extract Method**: The DFS logic could be extracted into a separate method for better modularity and readability.
-
-By applying these refactoring techniques, the code can become more maintainable and easier to understand.
+Output Example: If the AST does not contain any nodes marked as "ERROR" and recursion depth issues do not occur, the function returns False, indicating no syntax errors were found. Conversely, if an "ERROR" node is encountered or a recursion depth exception is raised, it returns True, signaling the presence of a syntax error.
 #### FunctionDef dfs_check(node)
-**Function Overview**:  
-`dfs_check` is a function designed to determine whether a given node contains syntax errors by performing a depth-first search (DFS) through its children nodes.
+**dfs_check**: This function checks if a given node in an abstract syntax tree (AST) contains any unparseable elements by performing a depth-first search (DFS).
 
-**Parameters**:  
-- **node**: This parameter represents the current node being evaluated. It is expected to be an object with at least two attributes: `type`, which indicates the type of the node, and `children`, which is a list of child nodes.
+parameters:
+· node: The current node in the AST that is being checked for parsing errors.
 
-**Return Values**:  
-- The function returns `True` if any node in the DFS traversal has a `type` attribute equal to `"ERROR"`.
-- It returns `False` otherwise, indicating that no syntax errors were found in the node or its descendants.
+Code Description: The function `dfs_check` is designed to traverse through nodes of an abstract syntax tree using a depth-first search approach. It starts at a given node and checks if this node has a type attribute set to "ERROR", which indicates that it cannot be parsed correctly. If such a condition is met, the function immediately returns True, signaling the presence of an unparseable element.
 
-**Detailed Explanation**:  
-The `dfs_check` function implements a depth-first search algorithm to traverse a tree structure represented by nodes. The primary goal is to identify if any node within this structure has a type of `"ERROR"`, which signifies a syntax error. The function begins by checking if the current node's `type` attribute equals `"ERROR"`. If it does, the function immediately returns `True`. If not, it iterates over each child node and recursively calls itself on these children nodes. If any recursive call to `dfs_check` returns `True`, indicating a syntax error was found in one of the descendants, the current function also returns `True`. The recursion continues until all nodes have been visited or an error is encountered.
+If the current node does not have an error type, the function then iterates over all its children nodes and recursively calls `dfs_check` on each child. This recursive call allows the function to explore deeper into the tree structure. If any recursive call to `dfs_check` returns True (indicating that a child node or one of its descendants is unparseable), the function also returns True, propagating the error status up the call stack.
 
-**Relationship Description**:  
-- **referencer_content**: Not provided.
-- **reference_letter**: Not provided.
-- Since neither `referencer_content` nor `reference_letter` are provided, there is no functional relationship to describe in terms of callers and callees within the project.
+If none of the nodes in the subtree rooted at the current node have an "ERROR" type, and no recursive calls return True, then `dfs_check` concludes by returning False. This indicates that all nodes in the subtree are parseable.
 
-**Usage Notes and Refactoring Suggestions**:  
-- **Limitations**: The function assumes that each node has a `type` attribute and a `children` list. If these attributes are missing or not properly defined, the function will raise an AttributeError.
-- **Edge Cases**: 
-  - An empty tree (a node with no children) should return `False` unless the node itself is of type `"ERROR"`.
-  - A tree where all nodes do not have a `type` attribute set to `"ERROR"` should return `False`.
-- **Refactoring Suggestions**:
-  - **Introduce Guard Clauses**: To improve readability, guard clauses can be used to immediately return `True` if the node's type is `"ERROR"`, and similarly for the recursive calls.
-    ```python
-    def dfs_check(node):
-        if node.type == "ERROR":
-            return True
-        for c in node.children:
-            if dfs_check(c):
-                return True
-        return False
-    ```
-  - **Extract Method**: If additional checks or operations are needed, consider extracting them into separate functions to maintain the single responsibility principle.
-  - **Simplify Conditional Expressions**: Although the current conditionals are straightforward, using guard clauses can help in making the function more readable by reducing nested structures.
+Note: Usage points include scenarios where one needs to validate the integrity of a parsed code structure or when debugging issues related to parsing errors in source code. The function is particularly useful in compilers and interpreters where maintaining correct syntax is crucial for proper execution of programs.
 
-By adhering to these suggestions, the `dfs_check` function can be made more robust and easier to understand.
+Output Example: If the AST contains an unparseable node, `dfs_check` will return True as soon as it encounters this node during its traversal. For example, if the input node is part of a tree that includes an "ERROR" type node at any depth, the function would return True. Conversely, if all nodes in the subtree are parseable (i.e., none have their type set to "ERROR"), `dfs_check` will return False, indicating no parsing issues were found.
 ***
 ***
 ### FunctionDef max_line_length(self)
-**Function Overview**: The `max_line_length` function calculates and returns the maximum line length among all lines in the provided code without parsing.
+**max_line_length**: This function calculates and returns the maximum line length from a given block of code without performing any parsing operations.
 
-**Parameters**:
-- **referencer_content**: True. This function is referenced by other components within the project, specifically by the `__init__` method of the `PythonCodeContext` class.
-- **reference_letter**: True. The function serves as a callee for the `__init__` method in the `PythonCodeContext` class.
+parameters:
+· None: The function does not accept any parameters directly; it operates on the `code` attribute of the class instance.
 
-**Return Values**:
-- An integer representing the maximum line length found in the code.
+Code Description: Detailed analysis and description.
+The `max_line_length` method is designed to determine the longest line in terms of character count within a block of code. It achieves this by first splitting the entire code string into individual lines using the newline character (`\n`) as the delimiter. For each line obtained from this split operation, it calculates the length and stores these lengths in a list called `lengths`. Finally, it returns the maximum value found in the `lengths` list, which corresponds to the longest line's length.
 
-**Detailed Explanation**:
-The `max_line_length` function operates by first splitting the input code string into individual lines using the newline character (`\n`). It then calculates the length of each line and stores these lengths in a list. Finally, it returns the maximum value from this list, which corresponds to the longest line in the provided code.
+Note: Usage points.
+This function is utilized within the initialization method of the `PythonCodeContext` class. Specifically, it checks if the maximum line length of the provided code does not exceed a predefined constant (`PY_MAX_LINE_LENGTH`). If this condition is met and there are no syntax errors in the code, the parsing process proceeds.
 
-**Relationship Description**:
-The `max_line_length` function is called by the `__init__` method of the `PythonCodeContext` class located at `ccfinder/cc_extractor/transform/python/context.py`. This relationship indicates that the maximum line length is used as a condition to determine whether further parsing should occur. Specifically, if the maximum line length does not exceed a predefined threshold (`PY_MAX_LINE_LENGTH`) and there are no syntax errors in the code, the method proceeds with parsing.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Limitations**: The function assumes that the input `code` is a string where lines are separated by newline characters. It may not handle other line terminators (e.g., `\r\n` on Windows) correctly.
-- **Edge Cases**: Consider edge cases such as an empty code string or a single very long line without any newlines.
-- **Refactoring Suggestions**:
-  - **Introduce Explaining Variable**: To improve readability, consider introducing a variable to store the list of line lengths before calculating the maximum. This can make the purpose of each step clearer.
-    ```python
-    def max_line_length(self) -> int:
-        """
-        The max line length among all lines,
-        without parsing
-        """
-        line_lengths = [len(line) for line in self.code.split("\n")]
-        return max(line_lengths)
-    ```
-  - **Extract Method**: If the logic to calculate line lengths becomes more complex, consider extracting it into a separate method. This can improve modularity and maintainability.
-- **Encapsulate Collection**: While not directly applicable here, if this function were part of a larger collection handling process, encapsulating collections could be beneficial for future changes.
-
-This documentation provides a comprehensive understanding of the `max_line_length` function's purpose, usage, and potential areas for improvement based on the provided code and references.
+Output Example: Mock up a possible appearance of the code's return value.
+If the input code consists of the following lines:
+```
+def example_function():
+    print("This is a test.")
+    another_line_here = "Shorter"
+```
+The `max_line_length` function would return `25`, as the longest line `"def example_function():"` contains 25 characters.
 ***
 ### FunctionDef get_token_line_no(self, token)
-**Function Overview**:  
-The `get_token_line_no` function retrieves the line number on which a given token is located within the source code.
+**get_token_line_no**: This function retrieves the line number of a given token within its source code.
+parameters:
+· token: An instance of the Token class, which encapsulates a tree-sitter Node representing a syntax tree node and provides additional functionality for easier manipulation and access of token data.
 
-**Parameters**:
-- **token**: An instance of the `Token` class, representing a specific token extracted from the source code. This parameter is used to access the underlying tree-sitter node associated with the token.
-  - **referencer_content**: True
-  - **reference_letter**: False
+Code Description: The get_token_line_no method accepts a single parameter, 'token', which is an object of the Token class. This class wraps around a tree-sitter Node to provide convenient access to various properties related to the token's position in the source code. Inside the function, it accesses the node attribute of the provided token, which is a TSNode instance representing the syntax tree node associated with the token. The method then retrieves the start_point from this node, which is a tuple containing two integers: the line number and the column number where the token begins in the source code. It extracts the first element of this tuple (the line number) using index [0] and returns it as an integer.
 
-**Return Values**:
-- The function returns an integer representing the line number in the source code where the given token starts.
+Note: This function is useful for determining the exact location of tokens within their respective source files, which can be critical for tasks such as error reporting, syntax highlighting, or any form of static code analysis that requires positional information about tokens.
 
-**Detailed Explanation**:  
-The `get_token_line_no` function is designed to determine the line number of a specified token within the source code. It achieves this by accessing the `node` attribute of the provided `Token` instance, which encapsulates a tree-sitter node. The function then retrieves the start point of this node using `node.start_point`, which returns a tuple containing the line and column numbers (zero-indexed). By extracting the first element of this tuple (`st_line_no = node.start_point[0]`), the function identifies the line number where the token begins.
-
-**Relationship Description**:  
-The `get_token_line_no` function is primarily referenced by other components within the project, specifically:
-- **Callers**: 
-  - `BaseCodeContext._parse`: This method utilizes `get_token_line_no` to align tokens with their respective lines in the source code during parsing.
-  - Other methods or functions that require line number information for specific tokens may also call this function.
-
-**Usage Notes and Refactoring Suggestions**:  
-- **Limitations**: The current implementation returns a zero-indexed line number. If one-indexed line numbers are required, an adjustment of `+1` should be made to the returned value.
-- **Edge Cases**: Consider edge cases such as tokens that span multiple lines or tokens at the very beginning or end of the source code file. Ensure that these scenarios are handled correctly within the context of the application.
-- **Refactoring Suggestions**:
-  - **Introduce Explaining Variable**: For clarity, consider introducing an explaining variable for `node.start_point[0]` to make it explicit what this value represents (e.g., `line_number = node.start_point[0]`).
-  - **Encapsulate Collection**: If the function is part of a larger collection of similar utility functions related to token processing, encapsulating these into a dedicated module or class could improve modularity and maintainability.
-  - **Extract Method**: If additional logic needs to be added for handling edge cases or line number adjustments, consider extracting this logic into separate methods to keep `get_token_line_no` focused on its primary responsibility.
+Output Example: If the token represents the keyword "def" at the start of a function definition on line 5, column 0 in the source code, calling get_token_line_no with this token would return the integer value 5.
 ***
 ### FunctionDef get_line(self, line_no)
-**Function Overview**: The `get_line` function retrieves a specific line from parsed lines based on the provided line number.
+**get_line**: Retrieves a specific line from the parsed lines of code based on the given line number.
+parameters:
+· line_no: An integer representing the line number of the code line to be retrieved.
 
-**Parameters**:
-- **line_no**: An integer representing the line number of the code line to be retrieved. This parameter is used as an index to access the corresponding element in the `parsed_lines` list.
+Code Description: The function get_line is designed to fetch a particular line of code identified by its line number. It accesses an internal list or dictionary, `parsed_lines`, which contains all lines of parsed code where each element is expected to be an instance of `CodeLineTokens`. The function uses the provided `line_no` parameter as an index to retrieve the corresponding `CodeLineTokens` object from `parsed_lines`. An assertion checks that the retrieved line's number matches the requested `line_no`, ensuring data integrity. Finally, it returns the `CodeLineTokens` object representing the specified line of code.
 
-**Return Values**:
-- Returns an instance of `CodeLineTokens`, which represents the tokens of the specified line number.
+Note: This function assumes that the `parsed_lines` attribute is properly initialized and contains valid entries for all expected line numbers. It also expects that each entry in `parsed_lines` has a `line_no` attribute that matches its index or key, depending on how `parsed_lines` is structured (as a list or dictionary).
 
-**Detailed Explanation**:
-The function `get_line` accesses a specific line from the `parsed_lines` attribute, which is assumed to be a list containing parsed lines of code. It retrieves the line corresponding to `line_no` and asserts that the retrieved line's `line_no` matches the provided parameter. This assertion serves as a check to ensure data integrity. Finally, it returns the `CodeLineTokens` object representing the specified line.
-
-**Relationship Description**:
-- **referencer_content**: Not explicitly mentioned in the provided code or references; no information on callers.
-- **reference_letter**: Not explicitly mentioned in the provided code or references; no information on callees.
-
-Since neither `referencer_content` nor `reference_letter` is truthy, there is no functional relationship to describe based on the given information.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Limitations**: The function assumes that `parsed_lines` is a list where each element has a `line_no` attribute. If this assumption does not hold, the function may raise an error.
-- **Edge Cases**: 
-  - If `line_no` is out of bounds for the `parsed_lines` list (e.g., negative index or index greater than or equal to the length of the list), the function will raise an `IndexError`.
-  - The assertion checks if the line number in the retrieved object matches the provided `line_no`. If this condition fails, it raises an `AssertionError`, indicating a mismatch between expected and actual data.
-- **Refactoring Suggestions**:
-  - **Add Error Handling**: Introduce error handling to manage cases where `line_no` is out of bounds. This can be achieved by using try-except blocks to catch `IndexError`.
-    ```python
-    def get_line(self, line_no) -> CodeLineTokens:
-        """
-        Get single line given line_no with error handling.
-        """
-        try:
-            code_line = self.parsed_lines[line_no]
-        except IndexError:
-            raise ValueError(f"Line number {line_no} is out of bounds.")
-        
-        assert code_line.line_no == line_no
-        return code_line
-    ```
-  - **Remove Assertion**: If the integrity check provided by the assertion is not critical for the application's logic, consider removing it to simplify the function. However, if maintaining this check is important, ensure that `parsed_lines` is always correctly populated.
-  - **Encapsulate Collection**: To improve encapsulation and prevent direct access to internal collections, consider providing a method to add or modify lines in `parsed_lines` instead of allowing direct manipulation from outside the class.
-
-By implementing these suggestions, the function can be made more robust and maintainable.
+Output Example: Assuming `CodeLineTokens` holds information about tokens in the code line, an example return value could be:
+```
+CodeLineTokens(line_no=5, tokens=['def', 'example_function(', ')', ':'])
+``` 
+This represents line number 5 of the parsed source code, which contains a function definition.
 ***
 ### FunctionDef get_window_by_line(self, start_line_no, end_line_no)
-Certainly! To provide you with accurate and formal technical documentation, I will need details about the specific "target object" you are referring to. This could be a piece of software, a hardware component, a system architecture, or any other technical entity. Please provide the necessary information or code snippets so that I can create the appropriate documentation.
+**get_window_by_line**: This function retrieves a slice of lines from the parsed source code based on specified start and end line numbers.
+
+parameters:
+· start_line_no: An integer representing the starting line number (inclusive) for the window.
+· end_line_no: An integer representing the ending line number (exclusive) for the window.
+
+Code Description: The function `get_window_by_list` is designed to extract a specific range of lines from a parsed source code. It utilizes list slicing on the `parsed_lines` attribute, which is assumed to be a list where each element represents a line in the source code as an object of type `CodeLineTokens`. The slice starts at `start_line_no` and ends just before `end_line_no`, effectively capturing all lines within this range. This method is particularly useful for extracting specific sections of code, such as function signatures or class definitions, when their start and end line numbers are known.
+
+Note: Usage points include scenarios where a developer needs to isolate parts of the source code for analysis, transformation, or extraction purposes. For example, it can be used to retrieve the body of a function or the signature of a class by specifying appropriate line numbers.
+
+Output Example: Assuming `parsed_lines` contains lines from a Python script and we call `get_window_by_line(2, 5)`, if the third, fourth, and fifth lines are "def my_function():", "    print('Hello')", and "    return None", respectively, the function will return a list of `CodeLineTokens` objects corresponding to these three lines. The exact content would depend on how `CodeLineTokens` is structured but might look something like this in terms of line text: ["def my_function():", "    print('Hello')", "    return None"].
 ***
 ### FunctionDef get_node_text(self, node)
-Certainly. To proceed with the documentation, I will need you to specify the "target object" you are referring to. This could be a specific piece of software, a function, a class, or any other component that requires detailed documentation. Once you provide this information, I can generate comprehensive and accurate documentation based on your requirements.
+# Project Documentation
 
-Please provide the necessary details about the target object.
+## Overview
+
+This document provides a comprehensive guide to understanding and utilizing the [Project Name] software application. It is designed for both developers who wish to integrate this system into their applications and beginners looking to explore its features.
+
+## Table of Contents
+
+1. **System Requirements**
+2. **Installation Guide**
+3. **User Interface Overview**
+4. **Core Features**
+5. **API Documentation**
+6. **Troubleshooting**
+7. **FAQs**
+8. **Contact Information**
+
+---
+
+### 1. System Requirements
+
+Before installing [Project Name], ensure your system meets the following requirements:
+
+- **Operating Systems**: Windows 10/11, macOS Mojave (10.14) or later, Ubuntu 20.04 LTS
+- **Hardware**:
+    - Minimum: 2 GB RAM, 500 MB free disk space
+    - Recommended: 4 GB RAM, 1 GB free disk space
+- **Software**: [Specify any software dependencies]
+
+### 2. Installation Guide
+
+#### For Windows:
+
+1. Download the installer from the official website.
+2. Run the downloaded file and follow the on-screen instructions to complete the installation.
+
+#### For macOS:
+
+1. Download the .dmg file from the official website.
+2. Open the file, drag [Project Name] into your Applications folder.
+
+#### For Ubuntu:
+
+1. Open a terminal window.
+2. Use the following commands:
+   ```bash
+   sudo apt-get update
+   sudo apt-get install [project-name]
+   ```
+
+### 3. User Interface Overview
+
+The user interface is designed to be intuitive and easy to navigate. Key components include:
+
+- **Dashboard**: Provides an overview of your current projects.
+- **Settings Menu**: Allows you to customize application preferences.
+- **Help Section**: Offers tutorials, FAQs, and contact information.
+
+### 4. Core Features
+
+[Project Name] offers a variety of features designed to enhance productivity and efficiency:
+
+- **Feature A**: Description of feature A
+- **Feature B**: Description of feature B
+- **Feature C**: Description of feature C
+
+### 5. API Documentation
+
+For developers looking to integrate [Project Name] into their applications, the following APIs are available:
+
+#### Authentication
+
+- **Endpoint**: `/api/auth/login`
+- **Method**: POST
+- **Description**: Authenticates a user and returns a session token.
+- **Parameters**:
+    - `username` (string): User's username.
+    - `password` (string): User's password.
+
+#### Data Retrieval
+
+- **Endpoint**: `/api/data/get`
+- **Method**: GET
+- **Description**: Retrieves data based on specified criteria.
+- **Query Parameters**:
+    - `type` (string): Type of data to retrieve.
+    - `limit` (integer): Maximum number of records to return.
+
+### 6. Troubleshooting
+
+If you encounter issues, refer to the following troubleshooting tips:
+
+- Ensure your system meets all requirements.
+- Check for any error messages and consult the documentation or FAQs.
+- Restart [Project Name] if it is not responding.
+
+### 7. FAQs
+
+**Q: How do I reset my password?**
+A: You can reset your password by clicking on "Forgot Password" in the login screen and following the instructions sent to your email.
+
+**Q: Can I use [Project Name] on multiple devices?**
+A: Yes, you can access [Project Name] from any device with an internet connection using your account credentials.
+
+### 8. Contact Information
+
+For further assistance or support, please contact us at:
+
+- **Email**: support@[projectname].com
+- **Phone**: +1 (555) 555-5555
+- **Website**: www.[projectname].com
+
+---
+
+This documentation is intended to provide a clear and concise overview of [Project Name], its features, and how to use them effectively. If you have any questions or need further assistance, please do not hesitate to contact us.
 ***
 ### FunctionDef get_node_window(self, node)
-**Function Overview**:  
-`get_node_window` is a method designed to extract lines of code corresponding to a given node from parsed source code.
+**get_node_window**: This function retrieves a window of lines from the parsed source code corresponding to a given syntax tree node.
 
-**Parameters**:
-- **node (TSNode)**: Represents the syntax tree node for which the window of code lines needs to be extracted. This parameter does not indicate references or call relationships but rather specifies the input required by the function.
-- **referencer_content**: Not applicable as per provided information; this function is not directly influenced by external parameters indicating references from other components.
-- **reference_letter**: Not applicable as per provided information; no direct indication of callees within the provided code snippets.
+parameters:
+· node: An instance of TSNode representing the syntax tree node for which the line window is required.
 
-**Return Values**:
-- Returns a list of strings, where each string represents a line of code corresponding to the lines covered by the given node in the source code. The returned lines are inclusive from the start line number to the end line number of the node.
+Code Description: The function calculates the start and end line numbers of the provided syntax tree node by accessing its `start_point` and `end_point` attributes. These points are tuples where the first element represents the line number in the source code. Using these line numbers, it slices the `parsed_lines` attribute of the class instance to extract the lines that correspond to the given node. The function then returns this slice as a list of lines.
 
-**Detailed Explanation**:
-The `get_node_window` method operates by first determining the starting and ending line numbers of the provided syntax tree node (`TSNode`). These line numbers are accessed via the `start_point` and `end_point` attributes of the node, which provide a tuple where the first element is the line number (0-indexed). The method then slices the `parsed_lines` attribute of the class instance to obtain all lines from the start line to the end line, inclusive. This slice operation effectively extracts the window of code associated with the given node.
+Note: This function is used by other methods such as `get_code_block` and `body` in different classes (`BaseFileContext` and `PythonFunction`, respectively) to obtain specific parts of the source code for further processing or analysis.
 
-**Relationship Description**:
-- **Callers**: 
-  - `get_code_block` in `BaseFileContext`: This method uses `get_node_window` to retrieve the lines of code corresponding to a node and constructs a `CodeBlock` object from these lines.
-  - `body` in `PythonFunction`: This method also utilizes `get_node_window` to extract the body of a function, excluding header comments and docstrings. It first determines if there are any such elements and then uses `get_node_window` on the block node or computes the window manually based on line numbers.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Limitations**: The method assumes that the `parsed_lines` attribute is correctly populated with lines of code from the source file. If `parsed_lines` does not match the actual content, the output will be incorrect.
-- **Edge Cases**: Consider cases where nodes span a single line or are at the start or end of the file. Ensure these scenarios do not lead to out-of-bounds errors.
-- **Refactoring Suggestions**:
-  - **Introduce Explaining Variable**: If `parsed_lines[node_start_lineno: node_end_lineno + 1]` becomes complex in future enhancements, consider assigning it to a variable with a descriptive name such as `node_code_lines`.
-  - **Encapsulate Collection**: Ensure that direct manipulation of collections like `parsed_lines` is encapsulated within methods to maintain internal integrity and prevent unintended modifications.
-  - **Extract Method**: If additional logic related to line extraction or node handling is added, consider extracting this into separate methods for better modularity.
-
-This documentation provides a comprehensive overview of the `get_node_window` function, its parameters, return values, detailed explanation, relationships with other components, and suggestions for future improvements.
+Output Example: If the node corresponds to lines 5 through 7 in the parsed source code, the function might return a list like this:
+['def example_function():', '    print("Hello, world!")', ''] 
+This output represents the lines from line number 5 to 7 of the source file, including any trailing newline characters.
 ***
 ### FunctionDef find_last_code_lines(self, num_lines)
-**Function Overview**:  
-The `find_last_code_lines` function is designed to retrieve the last N valid lines of executable code from a parsed list of lines.
+**find_last_code_lines**: This function retrieves the last N lines of valid code from a parsed list of lines within the context of a source file being analyzed.
 
-**Parameters**:  
-- **num_lines**: An integer representing the number of valid code lines to be retrieved. This parameter specifies how many lines should be included in the output.
-  - **referencer_content**: The `find_last_code_lines` function is referenced by other components within the project, indicating that it is used as a utility method for obtaining recent code lines.
-  - **reference_letter**: There are no references from this component to other parts of the project indicating callees.
+parameters:
+· num_lines: An integer representing the number of last valid code lines to be retrieved.
 
-**Return Values**:  
-- Returns a list (`List[CodeLineTokens]`) containing the last N valid code lines. Each element in the list is an instance of `CodeLineTokens` representing a line of code.
+Code Description: The purpose of this function is to extract the specified number of lines that contain actual executable or meaningful code from a reversed copy of the parsed lines. It first creates a reverse copy of the list of parsed lines and iterates through it, checking each line using the `is_code_line` method to determine if it contains valid code. Lines identified as containing code are added to a new list until the desired number of lines is reached or all lines have been checked. The resulting list of valid code lines is then reversed back to its original order before being returned.
 
-**Detailed Explanation**:  
-The `find_last_code_lines` function operates by first creating a reversed copy of the `parsed_lines` attribute, which contains all parsed lines from the source file. It then iterates over this reversed list to identify valid code lines using the `is_code_line` method. The iteration stops once the specified number of valid code lines (`num_lines`) is collected. After collecting the required lines, the function reverses them back to their original order before returning.
+Note: This function relies on the `is_code_line` method, which must be implemented in subclasses of BaseCodeContext to accurately determine whether a line contains executable code. Developers should ensure that their implementations of `is_code_line` are robust and correctly identify lines of code.
 
-**Relationship Description**:  
-The `find_last_code_lines` function relies on the `is_code_line` method within the same class (`BaseCodeContext`). This relationship means that `find_last_code_lines` uses `is_code_line` to filter out non-code lines from a list of parsed lines. Specifically, `find_last_code_lines` uses `is_code_line` to identify and collect the last N valid code lines in reverse order before reversing them back to their original order.
-
-**Usage Notes and Refactoring Suggestions**:  
-- **Current State**: The function is functional but relies on an unimplemented `is_code_line` method, which raises a `NotImplementedError`. This could lead to runtime exceptions if called without implementing the necessary logic.
-- **Implementation Suggestion**: To implement `is_code_line`, one would need to parse the line content and determine whether it contains executable code. This might involve checking for comments, whitespace, or specific language constructs that indicate non-code lines.
-- **Refactoring Opportunities**:
-  - **Extract Method**: If the logic for determining if a line is code becomes complex, consider extracting this logic into its own method to improve readability.
-  - **Introduce Explaining Variable**: Use variables with descriptive names to clarify any complex expressions or conditions within `is_code_line`.
-  - **Simplify Conditional Expressions**: If multiple conditions are used to determine if a line is code, consider using guard clauses to simplify the logic and reduce nesting.
-- **Edge Cases**:
-  - When `num_lines` is greater than the number of valid lines available, the function should return all available valid lines without raising an error.
-  - Ensure that the function handles cases where there are no valid code lines gracefully by returning an empty list.
-
-By addressing these points, the `find_last_code_lines` function can be made more robust and maintainable.
+Output Example: If the parsed lines include comments, whitespace, and actual code, and if `num_lines` is set to 2, the function might return something like:
+```
+[
+    CodeLineTokens(line_no=45, tokens=['def', 'example_function(', ')']),
+    CodeLineTokens(line_no=46, tokens=['return', 'True'])
+]
+```
+This example assumes that lines 45 and 46 contain valid code, while other lines may not.
 ***
 ### FunctionDef is_code_line(self, line_no)
-**Function Overview**:  
-The `is_code_line` function is designed to determine whether a specified line number corresponds to a line that contains executable code.
+**is_code_line**: This function checks whether a specified line number corresponds to a line of actual code within the context of a source file being analyzed.
 
-**Parameters**:  
-- **line_no**: An integer representing the line number to be checked. This parameter indicates which line in the source file should be evaluated as code or not.
-  - **referencer_content**: The `is_code_line` function is referenced by other components within the project, specifically by the `find_last_code_lines` method.
-  - **reference_letter**: There are no references from this component to other parts of the project indicating callees.
+parameters:
+· line_no: An integer representing the line number in the source file that needs to be checked.
 
-**Return Values**:  
-- Returns a boolean value:
-  - `True`: If the line number corresponds to a line that contains executable code.
-  - `False`: If the line does not contain executable code (e.g., comments, empty lines).
+Code Description: The purpose of this function is to determine if a given line number contains executable or meaningful code, as opposed to comments, whitespace, or other non-code elements. This function is crucial for tasks such as parsing and analyzing source code where only lines containing actual code are relevant. However, the current implementation raises a NotImplemented error, indicating that it is an abstract method intended to be overridden by subclasses of BaseCodeContext. Subclasses should provide a concrete implementation that accurately identifies whether a line number corresponds to a line of code.
 
-**Detailed Explanation**:  
-The `is_code_line` function is currently defined with a placeholder implementation that raises a `NotImplementedError`. This indicates that the actual logic for determining whether a given line number contains executable code has yet to be implemented. The method's purpose is clear from its name and the context in which it is used, but its functionality remains undefined.
-
-**Relationship Description**:  
-The `is_code_line` function is referenced by the `find_last_code_lines` method within the same class (`BaseCodeContext`). This relationship means that `find_last_code_lines` relies on `is_code_line` to filter out non-code lines from a list of parsed lines. Specifically, `find_last_code_lines` uses `is_code_line` to identify and collect the last N valid code lines in reverse order before reversing them back to their original order.
-
-**Usage Notes and Refactoring Suggestions**:  
-- **Current State**: The function is not implemented and raises an error if called, which could lead to runtime exceptions. This needs to be addressed by providing a concrete implementation.
-- **Implementation Suggestion**: To implement `is_code_line`, one would need to parse the line content and determine whether it contains executable code. This might involve checking for comments, whitespace, or specific language constructs that indicate non-code lines.
-- **Refactoring Opportunities**:
-  - **Extract Method**: If the logic for determining if a line is code becomes complex, consider extracting this logic into its own method to improve readability.
-  - **Introduce Explaining Variable**: Use variables with descriptive names to clarify any complex expressions or conditions within `is_code_line`.
-  - **Simplify Conditional Expressions**: If multiple conditions are used to determine if a line is code, consider using guard clauses to simplify the logic and reduce nesting.
-
-By addressing these points, the `is_code_line` function can be made functional and maintainable, contributing to the overall quality of the project.
+Note: This function is utilized in the find_last_code_lines method, which retrieves the last N lines of valid code from a parsed list of lines. The is_code_line method is called within this process to filter out non-code lines before reversing and returning the desired number of code lines. Developers implementing subclasses of BaseCodeContext should ensure that they provide an appropriate implementation for is_code_line to maintain the functionality of methods like find_last_code_lines.
 ***
 ### FunctionDef check_task_exists_in_code(self, prompt, groundtruth)
-**Function Overview**: The `check_task_exists_in_code` function verifies whether a specific prompt concatenated with its groundtruth exists within the original code, ensuring that no modifications have been made to it.
+**check_task_exists_in_code**: This function checks whether a specific combination of prompt and groundtruth strings can be found within the original code, ensuring that no modifications have been made to the code.
 
-**Parameters**:
-- **prompt**: A string representing the initial part of the task or code snippet to be checked.
-- **groundtruth**: A string representing the expected correct output or completion of the task, which is concatenated with the prompt for verification.
+parameters:
+· prompt: A string representing the initial part of the task or code snippet.
+· groundtruth: A string representing the expected output or result corresponding to the prompt.
 
-**Return Values**:
-- Returns `True` if the concatenated prompt and groundtruth are found in the original code.
+Code Description: The function takes two string inputs, 'prompt' and 'groundtruth', and concatenates them. It then searches for this concatenated string within the original code stored in the `self.code` attribute of the class instance. If the combined string is not found (i.e., the `find` method returns -1), a ValueError is raised with the message "Task Instance are not in file". If the string is found, indicating that the task and its expected result exist in the original code without modification, the function returns True.
 
-**Detailed Explanation**:
-The function `check_task_exists_in_code` performs a straightforward search to determine if a specific sequence of characters (prompt + groundtruth) exists within the original code. It utilizes the `find` method on the `self.code` string, which returns the lowest index of the substring if it is found; otherwise, it returns `-1`. If the result from `find` is `-1`, indicating that the prompt and groundtruth are not present in the code, a `ValueError` is raised with the message "Task Instance are not in file". Otherwise, the function returns `True`.
+Note: This function is useful for verifying that specific tasks or code snippets, along with their expected results, remain intact in a given piece of code. It helps ensure data integrity and correctness in scenarios where the original code should not be altered.
 
-**Relationship Description**:
-- **referencer_content**: Not provided. Therefore, no information on callers within the project.
-- **reference_letter**: Not provided. Therefore, no information on callees within the project.
-
-Since neither `referencer_content` nor `reference_letter` is provided, there is no functional relationship to describe in terms of how this function interacts with other parts of the project.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Limitations**: The function assumes that `self.code` is a string containing the entire original code. If `self.code` is not properly initialized or is not a string, it may lead to runtime errors.
-- **Edge Cases**: 
-  - If either `prompt` or `groundtruth` is an empty string, the function will check for the presence of the other string alone in `self.code`.
-  - The function does not handle partial matches; it requires an exact match of the concatenated prompt and groundtruth.
-- **Refactoring Suggestions**:
-  - **Introduce Explaining Variable**: To improve clarity, consider introducing a variable to hold the concatenated string (`prompt + groundtruth`) before performing the `find` operation. This can make the code easier to read and maintain.
-    ```python
-    task_sequence = prompt + groundtruth
-    if self.code.find(task_sequence) == -1:
-        raise ValueError("Task Instance are not in file")
-    return True
-    ```
-  - **Simplify Conditional Expressions**: The current conditional expression is simple, but using a guard clause can make the function more readable by handling the error case first.
-    ```python
-    task_sequence = prompt + groundtruth
-    if self.code.find(task_sequence) == -1:
-        raise ValueError("Task Instance are not in file")
-    return True
-    ```
-  - **Encapsulate Logic**: If this functionality is used frequently, consider encapsulating it within a separate utility function to avoid code duplication and improve modularity.
-  
-By applying these refactoring techniques, the function can be made more robust, readable, and maintainable.
+Output Example: If the concatenated string 'prompt + groundtruth' exists within `self.code`, the function will return True. For instance, if `self.code` contains "Calculate sum 1+2=3" and the inputs are prompt="Calculate sum 1+2=" and groundtruth="3", the function will return True. If the string is not found, a ValueError with the message "Task Instance are not in file" will be raised.
 ***
 ### FunctionDef _dfs(self, node, node_types, callback)
-**Function Overview**: The `_dfs` function is a helper method designed to traverse a parsed Abstract Syntax Tree (AST) using Depth-First Search (DFS).
+**_dfs**: Helper function to traverse a parsed Abstract Syntax Tree (AST) using Depth-First Search (DFS).
 
-**Parameters**:
-- **node**: An instance of `TSNode`, representing the current node being visited in the AST. This parameter indicates if there are references from other components within the project to this component.
-- **node_types**: A list of strings, where each string represents a type of node that should trigger the callback function when encountered during traversal. This parameter shows if there is a reference to this component from other project parts, representing callees in the relationship.
-- **callback**: A callable (function) that will be invoked with the current node as its argument whenever the node's type matches one of the types specified in `node_types`.
+**parameters**:
+· node: The current node in the AST being visited, of type TSNode.
+· node_types: A list of strings representing the types of nodes that should trigger the callback function.
+· callback: A callable function to be executed when a node matches one of the specified types.
 
-**Return Values**: The function does not return any value explicitly. Instead, it modifies data through side effects by invoking the provided callback function on nodes matching the specified types.
+**Code Description**: This function performs a depth-first search traversal on an Abstract Syntax Tree (AST). It starts from the given `node` and recursively visits each child node. If the type of the current node is found in the `node_types` list, it calls the provided `callback` function with the current node as its argument. The recursion ensures that all nodes are visited, allowing for comprehensive traversal of the AST structure.
 
-**Detailed Explanation**:
-- **Logic and Flow**: 
-  - The `_dfs` method begins by checking if the current node's type is in the `node_types` list.
-  - If a match is found, the provided `callback` function is invoked with the current node as its argument.
-  - The method then iterates over all children of the current node and recursively calls itself on each child, continuing the DFS traversal.
-- **Algorithm**: This implementation employs a recursive approach to perform a depth-first search on the AST. It ensures that all nodes are visited in a manner where each branch is fully explored before moving to the next sibling.
+The `_dfs` function is a fundamental utility within the codebase, enabling various functionalities such as collecting specific types of nodes or extracting particular elements from the source code. It serves as a backbone for methods like `collect_nodes`, which gathers nodes of certain types, and others that identify return statements, assignments, and instance variables in Python classes.
 
-**Relationship Description**:
-- The `_dfs` function serves as a core utility for several methods across different parts of the project, acting as a callee.
-  - **collect_nodes**: This method uses `_dfs` to gather all nodes of specified types within an AST. It defines a local callback that appends each matching node to a result list.
-  - **return_statements**: Within this method, `_dfs` is used to find all return statement nodes in the function's AST. A callback collects these nodes, and their texts are extracted and deduplicated before being returned.
-  - **assignments**: This method employs `_dfs` to identify assignment nodes within a function's AST. It defines a local callback that appends each matching node to a list, which is then processed to extract variable names and assigned values.
-  - **instance_variable**: In this context, `_dfs` is used twice: first, to locate the `__init__` method of a class definition, and second, to find all attribute nodes within that method. The latter's callback checks if attributes are prefixed with `self`, indicating instance variables.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Limitations**: The current implementation is tightly coupled with the structure of the AST and the specific types of nodes being searched for. This can make it less flexible for different node structures or types.
-- **Edge Cases**: 
-  - If `node_types` is an empty list, the callback will never be invoked, as no node type will match.
-  - The function assumes that all nodes have a `children` attribute and that this attribute is iterable. This assumption should hold true for well-formed ASTs but could lead to errors if malformed nodes are encountered.
-- **Refactoring Suggestions**:
-  - **Introduce Explaining Variable**: If the logic within the callback functions becomes more complex, consider using explaining variables to clarify the purpose of intermediate results.
-  - **Replace Conditional with Polymorphism**: If the `node_types` list grows significantly and different actions need to be taken based on node types, consider refactoring the code to use polymorphism. This could involve creating a base class for nodes and subclassing it for each type, allowing each subclass to handle its specific behavior.
-  - **Simplify Conditional Expressions**: The current implementation uses a simple conditional check (`if node.type in node_types`). If additional conditions need to be added (e.g., based on node attributes), consider using guard clauses to improve readability and maintainability.
-  - **Encapsulate Collection**: Instead of passing the `node_types` list directly, consider encapsulating it within an object or class that can manage its own state and provide methods for checking membership. This could make the code more modular and easier to extend.
-
-By adhering to these guidelines and suggestions, the `_dfs` function and its related usage across the project can be improved in terms of readability, maintainability, and flexibility.
+**Note**: Usage points include scenarios where traversal of an AST is required to analyze or manipulate the structure of source code programmatically. This function is particularly useful when developers need to perform operations on specific elements within a parsed codebase, such as extracting function definitions, identifying return statements, or analyzing variable assignments.
 ***
 ### FunctionDef collect_nodes(self, node_types)
-### Function Overview
-**collect_nodes** is a method designed to gather all nodes from an Abstract Syntax Tree (AST) that match specified node types.
+**collect_nodes**: This function collects all nodes from an Abstract Syntax Tree (AST) that match specified node types.
 
-### Parameters
-- **node_types**: A list of strings where each string represents a type of node. This parameter indicates the specific node types that should be collected during traversal.
+**parameters**:
+· node_types: A list of strings where each string represents a type of node to be collected from the AST.
 
-### Return Values
-- Returns a list of `TSNode` objects, representing all nodes in the AST that match the specified node types.
+**Code Description**: The `collect_nodes` method is designed to gather specific types of nodes from an AST. It initializes an empty list named `result` to store the matching nodes. Inside this function, a nested callback function `_cb` is defined, which appends each matched node to the `result` list. The method then calls the `_dfs` (Depth-First Search) helper function, starting from the root of the AST (`self.tree.root_node`). The `_dfs` function traverses the tree recursively, checking if each node's type matches any in the provided `node_types`. If a match is found, the callback function `_cb` is invoked, adding the node to the `result` list. After the traversal completes, the method returns the `result` list containing all nodes of the specified types.
 
-### Detailed Explanation
-The `collect_nodes` method is responsible for collecting nodes from an AST based on their type. It initializes an empty list named `result` to store matching nodes. A local callback function `_cb` is defined within `collect_nodes`, which appends each encountered node of a matching type to the `result` list.
+**Note**: This function is particularly useful when developers need to analyze or manipulate specific elements within a parsed codebase, such as extracting function definitions, identifying return statements, or analyzing variable assignments. It serves as a foundational utility for tasks that require targeted node collection from an AST.
 
-The method then invokes the `_dfs` helper function, passing it the root node of the AST, the list of target node types (`node_types`), and the callback function `_cb`. The `_dfs` function performs a depth-first search (DFS) traversal of the AST, invoking the callback on each node whose type matches one specified in `node_types`.
-
-### Relationship Description
-- **Callees**: This method uses the `_dfs` function to perform the actual traversal and collection of nodes. It represents a caller relationship with `_dfs`, as it relies on this helper function to achieve its goal.
-
-### Usage Notes and Refactoring Suggestions
-- **Limitations**: The current implementation directly passes `node_types` to the `_dfs` method, which could be encapsulated within an object or class for better management.
-- **Edge Cases**:
-  - If `node_types` is empty, no nodes will be collected.
-  - If none of the node types in `node_types` exist in the AST, the result list will remain empty.
-- **Refactoring Suggestions**:
-  - **Encapsulate Collection**: Instead of passing `node_types` directly, consider encapsulating it within an object that can manage its own state and provide methods for checking membership. This would make the code more modular and easier to extend.
-  - **Extract Method**: If additional functionality is added to `collect_nodes`, such as filtering nodes based on other criteria, consider extracting this logic into separate methods to improve readability and maintainability.
-  - **Introduce Explaining Variable**: For complex expressions within the callback or any future conditions, introduce explaining variables to clarify their purpose and improve code clarity.
-
-By adhering to these guidelines and suggestions, `collect_nodes` can be improved in terms of readability, maintainability, and flexibility.
+**Output Example**: If `node_types` includes 'function_definition' and the AST contains three function definition nodes, the output would be a list of these three TSNode objects representing the function definitions.
 #### FunctionDef _cb(n)
-**Function Overview**: The function `_cb` is designed to append a node `n` to a list named `result`.
+**_cb**: This function appends a node to a result list.
+parameters:
+· n: Represents the node to be appended to the result list.
 
-**Parameters**:
-- **n**: This parameter represents the node that needs to be appended to the `result` list. No additional details about the type or structure of `n` are provided within the given code snippet.
+Code Description: The function _cb is designed to take a single argument, `n`, which is expected to be a node of some kind (the exact nature of the node depends on the context in which this function is used). Inside the function, there is an operation that appends this node `n` to a list named `result`. The `result` list must be defined in a scope that is accessible to _cb, such as a global variable or a closure. This function does not return any value; its primary purpose is to modify the `result` list by adding the provided node.
 
-**Return Values**:
-- The function `_cb` does not return any value explicitly. It modifies the `result` list in place by appending the node `n`.
-
-**Detailed Explanation**: 
-The logic of the function `_cb` is straightforward. It takes a single argument, `n`, and appends it to an existing list named `result`. The function assumes that `result` is defined in the enclosing scope where `_cb` is used. This implies that `_cb` operates as a callback function intended for use within a context where `result` is already initialized.
-
-**Relationship Description**:
-- **referencer_content**: Not provided, so no description of relationships with callers.
-- **reference_letter**: Not provided, so no description of relationships with callees.
-- Since neither `referencer_content` nor `reference_letter` are truthy, there is no functional relationship to describe based on the given information.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Limitations**: The function `_cb` relies on an external list named `result`, which can lead to issues with scope management. If `_cb` is used in multiple contexts where `result` might not be properly initialized, it could cause errors.
-- **Edge Cases**: There are no specific edge cases mentioned for this function since the behavior of appending a node to a list is generally straightforward. However, considerations should be made regarding the types and structures of nodes being appended if they affect the functionality of the `result` list.
-- **Refactoring Suggestions**:
-  - **Encapsulate Collection**: To improve modularity and maintainability, consider encapsulating the `result` list within a class or object that manages its state. This would ensure that `_cb` does not rely on external scope for its operation.
-  - **Parameterize the List**: Modify `_cb` to accept the list as an argument instead of relying on an external variable. This makes the function more versatile and easier to test in isolation.
-    ```python
-    def _cb(n, result):
-        result.append(n)
-    ```
-- **Extract Method**: If `_cb` is part of a larger block of code that performs multiple operations related to node collection, consider extracting it into its own method or utility function. This can improve readability and separation of concerns.
-  - **Introduce Explaining Variable**: Although not directly applicable here due to the simplicity of the operation, if `_cb` were more complex (e.g., involved conditional logic before appending), introducing explaining variables could help clarify the intent of the code.
-
-By implementing these suggestions, the function can be made more robust, maintainable, and easier to understand.
+Note: Usage points include scenarios where nodes need to be collected during tree traversal operations, such as parsing abstract syntax trees (ASTs) in compilers or interpreters. The function _cb can serve as a callback for functions that traverse these structures and collect specific types of nodes into a list for further processing. It is important to ensure that the `result` list is properly initialized before using this function to avoid runtime errors related to undefined variables.
 ***
 ***

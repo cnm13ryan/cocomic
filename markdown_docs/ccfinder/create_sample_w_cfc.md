@@ -1,140 +1,84 @@
 ## FunctionDef process_edges(retrieved_edges)
-**Function Overview**: The `process_edges` function is designed to reformat edge data from a dictionary structure into a list format suitable for further processing.
+**process_edges**: This function processes a dictionary of edges to reformat them into a list of lists where each sublist contains details about an edge.
 
-**Parameters**:
-- **retrieved_edges**: A dictionary where each key represents a node (head) and the value is a list of edges associated with that node. Each edge is represented as a tuple containing another tuple and an integer, e.g., `((node1, node2), weight)`.
+parameters:
+· retrieved_edges: A dictionary where keys are node identifiers (heads) and values are lists of tuples representing edges connected to the head node. Each tuple contains another tuple with two elements (likely source and destination node identifiers) and a third element which could be an attribute or weight of the edge.
 
-**Return Values**:
-- Returns a list of processed edges (`proc_edges`). Each element in this list is a list containing four elements: the head node, the first node of the edge, the second node of the edge, and the edge weight. The format for each entry is `[head, node1, node2, weight]`.
+Code Description: The function iterates over each key in the `retrieved_edges` dictionary, treating each key as a 'head' node. For every head node, it further iterates through its associated list of edges. Each edge is represented by a tuple where the first element is itself a tuple containing two identifiers (possibly source and destination nodes) and the second element could be an attribute or weight of that edge. The function constructs a new list `proc_edges` where each entry is a flattened version of these tuples, specifically [head node, source node, destination node, edge attribute/weight]. This reformatted data structure simplifies further processing or analysis of the edges.
 
-**Detailed Explanation**:
-The `process_edges` function iterates over each key (node) in the `retrieved_edges` dictionary. For each key, it further iterates through the list of edges associated with that key. Each edge is a tuple where the first element is another tuple containing two nodes and the second element is an integer representing the weight of the edge. The function constructs a new list (`pe`) for each edge by extracting these details and appends this list to `proc_edges`. The final result is a flattened list of edges, each represented as `[head_node, node1, node2, weight]`.
+Note: Usage points indicate this function is called within `create_test_samples` to process and reformat edges retrieved from a file. The processed edges are then used alongside nodes in creating test samples for some kind of evaluation or testing procedure, possibly related to code clone detection or similar functionality.
 
-**Relationship Description**:
-- **referencer_content**: True. This function is called by the `create_test_samples` function located in `ccfinder/create_sample_w_cfc.py`.
-- **reference_letter**: False. There are no references to this function from other parts of the project based on the provided information.
-
-The `process_edges` function is called within the loop that processes each prompt in the `create_test_samples` function. It takes the edge data specific to a file (retrieved by replacing the project location with an empty string) and transforms it into a format used for further processing, such as post-squeezing nodes.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Limitations**: The function assumes that `retrieved_edges` is structured correctly; there are no checks or error handling for malformed input.
-- **Edge Cases**: If `retrieved_edges` is empty or contains keys with empty edge lists, the function will return an empty list without errors. However, it does not handle cases where individual edges might be malformed (e.g., missing weight).
-- **Refactoring Suggestions**:
-  - **Introduce Explaining Variable**: For clarity, consider introducing variables to hold intermediate values such as `node1`, `node2`, and `weight` within the loop.
-    ```python
-    for head in retrieved_edges.keys():
-        for e in retrieved_edges[head]:
-            node1, node2 = e[0]
-            weight = e[1]
-            pe = [head, node1, node2, weight]
-            proc_edges.append(pe)
-    ```
-  - **Extract Method**: If the logic inside the loop becomes more complex, consider extracting it into a separate function to improve readability.
-    ```python
-    def process_single_edge(head, edge):
-        node1, node2 = edge[0]
-        weight = edge[1]
-        return [head, node1, node2, weight]
-
-    for head in retrieved_edges.keys():
-        for e in retrieved_edges[head]:
-            proc_edges.append(process_single_edge(head, e))
-    ```
-  - **Encapsulate Collection**: If the function is used frequently and `retrieved_edges` needs to be manipulated or queried often, consider encapsulating it within a class that provides methods for these operations.
-- **Simplify Conditional Expressions**: Although there are no conditionals in this function, if any were added later, consider using guard clauses to simplify them.
-
-By following these suggestions, the code can become more maintainable and easier to understand, especially as the project grows or requires modifications.
+Output Example: If `retrieved_edges` were {'A': [(('B', 'C'), 1)], 'D': [(('E', 'F'), 2)]}, the function would return [['A', 'B', 'C', 1], ['D', 'E', 'F', 2]]. Each sublist represents an edge with its head node, source node, destination node, and some attribute or weight.
 ## FunctionDef post_squeeze_nodes(nodes, edges)
-**Function Overview**: The `post_squeeze_nodes` function is designed to merge specific nodes and their associated edges into a single node while maintaining the integrity of the graph structure.
+**post_squeeze_nodes**: This function processes a list of nodes and edges to merge specific types of nodes based on predefined edge types, effectively compressing the graph representation by combining related nodes into single entities.
 
-**Parameters**:
-- **nodes**: A list of string nodes representing code elements (e.g., functions, classes).
-- **edges**: A list of lists where each sublist represents an edge in the form `[node_index1, edge_type, edge_label, node_index2]`.
+parameters:
+· nodes: A list of node strings representing various elements such as functions or classes.
+· edges: A list of edges connecting these nodes. Each edge is represented as a list containing indices of the head and tail nodes, along with additional metadata about the connection type.
 
-**Return Values**:
-- **squeezed_nodes**: A list of updated nodes after merging.
-- **squeezed_edges**: A list of updated edges reflecting the changes in nodes.
+Code Description: The function begins by initializing several data structures to manage the merging process. It first de-duplicates the edges to ensure each unique connection is only considered once. Then, it creates a more concrete representation of these edges by replacing node indices with their corresponding string values from the nodes list.
 
-**Detailed Explanation**:
-The `post_squeeze_nodes` function processes a graph represented by nodes and edges. It identifies pairs of nodes that should be merged based on specific edge types defined in `EDGE_TYPES_TO_SQEEZE`. The merging process involves concatenating the head node with the tail node, separated by a newline character, to form a new node. This new node replaces the original pair in both the nodes and edges lists.
+The core logic involves iterating over the edges and checking if they match any edge types specified in the `EDGE_TYPES_TO_SQEEZE` constant (not shown in the provided code snippet). If an edge matches, it indicates that the head and tail nodes should be merged into a single node. This new node is constructed by concatenating the head and tail strings with a newline character in between, prefixed by a hash symbol to distinguish it as a merged entity.
 
-1. **De-duplication of Edges**: The function begins by removing duplicate edges using an `OrderedDict` to ensure each edge is unique.
-2. **Concrete Edge Creation**: It then creates a list of concrete edges, where each edge's node indices are replaced with their corresponding node values from the nodes list.
-3. **Node Merging**: For each edge, if the edge type indicates that merging should occur (checked against `EDGE_TYPES_TO_SQEEZE`), it merges the head and tail nodes into a new node. This new node is stored in a mapping for both original nodes to ensure consistency across all edges.
-4. **Edge Update**: The function updates each edge to reflect the merged nodes, replacing indices with the new node values where applicable.
-5. **Return Values**: Finally, it returns the updated list of nodes and edges.
+The function maintains a mapping of original nodes to their merged counterparts using `squeezed_nodes_map`. It also tracks redundant nodes that are part of merges to avoid including them separately later. After processing all edges, the function updates the list of nodes and edges to reflect these changes. Nodes involved in merges are replaced with their merged versions, while standalone nodes remain unchanged. Edges are updated to point to the new node indices.
 
-**Relationship Description**:
-- **Referencer Content**: The `post_squeeze_nodes` function is called by `create_samples` within the `create_samples` method in the provided reference (`create_samples`). This indicates that `post_squeeze_nodes` serves as a post-processing step to compress nodes further after initial processing.
-- **Reference Letter**: No additional callees are mentioned directly in the provided code snippet, but based on context, it can be inferred that `post_squeeze_nodes` is likely called by other parts of the application where node compression is necessary.
+Finally, the function returns two lists: the updated list of nodes and the updated list of edges, both reflecting the compressed graph structure.
 
-**Usage Notes and Refactoring Suggestions**:
-- **Extract Method**: The function could benefit from breaking down into smaller methods to handle specific tasks such as de-duplicating edges, creating concrete edges, and merging nodes. This would improve readability and maintainability.
-- **Introduce Explaining Variable**: Complex expressions within the loop for updating edges can be simplified by introducing explaining variables that clearly describe their purpose.
-- **Simplify Conditional Expressions**: Using guard clauses could simplify conditional checks, making the code easier to follow.
-- **Encapsulate Collection**: Direct manipulation of collections (nodes and edges) should be encapsulated in methods to hide internal representation and improve flexibility for future changes.
+Note: This function is typically used as a post-processing step after retrieving nodes and edges from a codebase or similar data source. It helps in reducing redundancy and simplifying the representation by merging related nodes based on specific edge types.
 
-By applying these refactoring techniques, `post_squeeze_nodes` can become more modular, readable, and maintainable.
+Output Example:
+Given the following input:
+nodes = ["file.func_name", "def func_name(): …", "other_node"]
+edges = [[0, 'type_to_squeeze', 'metadata', 1], [2, 'other_type', 'more_metadata', 0]]
+
+The function might return:
+squeezed_nodes = ['#file.func_name\ndef func_name(): …', 'other_node']
+squeezed_edges = [['0', 'type_to_squeeze', 'metadata', '0']]
 ## FunctionDef create_test_samples(pair)
-Certainly. To provide accurate and formal documentation, I will need you to specify the "target object" you are referring to. This could be a class, function, module, or any other component of your codebase. Please provide the necessary details so that the documentation can be crafted accordingly.
+**create_test_samples**: This function generates test samples by combining prompts from a prompt file with corresponding retrieved nodes and edges from another file. It processes these elements to create a structured format suitable for further analysis, such as code clone detection.
 
-For example, if the target object is a function named `calculate_area`, please include its definition and any relevant comments or context that describe its purpose, parameters, return values, and usage examples.
+parameters:
+· pair: A tuple containing two strings - the path to the prompt file and the path to the retrieved node file.
+
+Code Description: The function starts by initializing an empty list `samples` to store the processed test samples. It then opens and reads the retrieved node file, parsing its JSON content to extract project location, nodes, and edges. Next, it reads the prompt file line by line, converting each line from a JSON string into a dictionary.
+
+For each prompt in the prompts list, the function creates a new sample dictionary `s`. This dictionary includes the original prompt text and ground truth information. It also retrieves the relevant nodes and edges for the current prompt's metadata file path (adjusted relative to the project location). If no nodes are found, the loop continues to the next prompt.
+
+The retrieved edges are processed using the `process_edges` function to reformat them into a list of lists. The nodes and edges are then further processed by the `post_squeeze_nodes` function to merge related nodes based on specific edge types, effectively compressing the graph representation. If no edges remain after this step, the loop continues.
+
+The sample dictionary is updated with the metadata from the prompt and appended to the `samples` list. Finally, all samples are converted into JSON strings and joined together with newline characters, forming a single string that represents all test samples.
+
+Note: This function is typically used as part of a larger process for creating datasets or evaluating systems related to code clone detection. It reads input files containing prompts and retrieved nodes/edges, processes these elements, and outputs structured test samples in JSON format.
+
+Output Example: Given the following inputs:
+- Prompt file content:
+  {"prompt": "Find the function definition", "groundtruth": "def example_function(): pass", "metadata": {"file": "/path/to/project/file.py"}}
+- Retrieved node file content (simplified):
+  {
+    "project_location": "/path/to/project/",
+    "retrived_nodes": {"file.py": ["node1", "node2"]},
+    "retrieved_edges": {"file.py": [("node1", ("node2", "type"), "attr")]}
+  }
+
+The function might return:
+{"prompt": "Find the function definition", "groundtruth": "def example_function(): pass", "retrieved_nodes": ["#node1\nnode2"], "retrieved_edges": [["0", "type", "attr", "0"]], "metadata": {"file": "/path/to/project/file.py"}}
 ## FunctionDef prepend_locale(edges)
-**Function Overview**:  
-The `prepend_locale` function is designed to collect entities from a list of edges and prepend a locale identifier to each entity under specific conditions. This method is specifically utilized for random entity experiments.
+**prepend_locale**: This function processes a list of edges to collect unique entities by prepending a locale identifier to each entity under specific conditions. It is primarily used for experiments involving random entities.
 
-**Parameters**:
-- **edges**: A list of dictionaries where each dictionary represents an edge with at least two keys: "rel" (relationship type) and "head" (entity head). Optionally, it may also contain a "tail" key representing the entity tail. This parameter is essential as it provides the input data that `prepend_locale` processes.
+**parameters**:
+· edges: A list of dictionaries, where each dictionary represents an edge with keys "rel", "head", and "tail". The "rel" key indicates the relationship type between the head and tail entities.
 
-**Return Values**:
-- The function returns a list of unique entities after processing. Each entity in this list has been potentially modified by prepending a locale identifier if its relationship type matches those specified in `EDGE_TYPES_TO_SQEEZE`.
+**Code Description**: The function initializes an empty list named `entities` to store unique entity identifiers. It iterates over each element in the input list `edges`. For each edge, it checks if the relationship type ("rel") is included in a predefined set of types (`EDGE_TYPES_TO_SQEEZE`). If true, it appends the "head" entity to the `entities` list and constructs a new string by concatenating "#" with the "head" entity followed by a newline character and the "tail" entity. This constructed string is then appended to the `entities` list. If the relationship type is not in `EDGE_TYPES_TO_SQEEZE`, it simply appends both the "head" and "tail" entities to the `entities` list. After processing all edges, the function returns a list of unique entities by converting the `entities` list into an `OrderedDict` and then back to a list. This conversion ensures that duplicates are removed while maintaining the original order of first appearances.
 
-**Detailed Explanation**:
-The `prepend_locale` function iterates over each edge in the provided list (`edges`). For each edge, it checks whether the relationship type ("rel") is included in the predefined set `EDGE_TYPES_TO_SQEEZE`. If this condition is met, the function constructs a new entity by concatenating a hash symbol (`#`), the "head" of the edge, and the "tail" of the edge. This constructed entity is then added to the list of entities along with the original "head". If the relationship type does not match those in `EDGE_TYPES_TO_SQEEZE`, only the "head" and "tail" are added separately to the entities list.
+**Note**: The function assumes the existence of a predefined set `EDGE_TYPES_TO_SQEEZE`, which should be defined elsewhere in the codebase for this function to work correctly. Developers must ensure that this set is properly initialized with appropriate relationship types before calling `prepend_locale`.
 
-To ensure that all entities in the final output are unique, the function converts the list of entities into an `OrderedDict` and then back to a list. This process removes any duplicate entries while preserving the order of first appearance.
-
-**Relationship Description**:
-- **referencer_content**: Not explicitly provided.
-- **reference_letter**: Not explicitly provided.
-Since neither `referencer_content` nor `reference_letter` is truthy, there is no functional relationship with other components to describe based on the given information.
-
-**Usage Notes and Refactoring Suggestions**:
-- **Limitations**: The function relies on a predefined set `EDGE_TYPES_TO_SQEEZE`, which must be defined elsewhere in the codebase. This dependency should be noted for proper context.
-- **Edge Cases**: If `edges` is an empty list, the function will return an empty list without any processing.
-- **Refactoring Suggestions**:
-  - **Extract Method**: The logic for constructing the entity with a prepended locale could be extracted into a separate method to improve readability and modularity. This would make the main loop in `prepend_locale` cleaner and more focused on its primary responsibility of collecting entities.
-  - **Introduce Explaining Variable**: For clarity, consider using an explaining variable to hold the constructed entity string (`entity = "#" + e["head"] + "\n" + e["tail"]`) before appending it to the list. This can make the code easier to understand at a glance.
-  - **Simplify Conditional Expressions**: The conditional check for `EDGE_TYPES_TO_SQEEZE` could be simplified by using guard clauses if additional conditions are introduced in future development, thereby improving readability.
-
-By applying these refactoring techniques, the function can become more maintainable and adaptable to future changes.
+**Output Example**: Given an input list of edges like `[{"rel": "type1", "head": "entityA", "tail": "entityB"}, {"rel": "type2", "head": "entityC", "tail": "entityD"}]` and assuming `EDGE_TYPES_TO_SQEEZE` contains `"type1"`, the function would return a list such as `['entityA', '#entityA\nentityB', 'entityC', 'entityD']`. If `EDGE_TYPES_TO_SQEEZE` were empty, it would return `['entityA', 'entityB', 'entityC', 'entityD']`.
 ## FunctionDef main
-### Function Overview
-**main**: This function writes test samples created from specified prompt and retrieved entity files into an output file.
+**main**: This function serves as the entry point for generating test samples from specified input files. It orchestrates the reading of a prompt file and a retrieved entity file, processes these inputs to create structured test samples, and writes the resulting JSON-formatted string to an output file.
 
-### Parameters
-- **referencer_content**: Not explicitly defined within the provided code snippet. It indicates if there are references (callers) from other components within the project to this component.
-- **reference_letter**: Not explicitly defined within the provided code snippet. This parameter shows if there is a reference to this component from other project parts, representing callees in the relationship.
+parameters:
+· No explicit parameters are listed in the function signature; however, it relies on `args` which is expected to contain at least two attributes: `output_file`, specifying the path where the generated test samples will be written, and `prompt_file` and `retrieved_entity_file`, passed as a tuple to the `create_test_samples` function.
 
-### Return Values
-- The function does not return any value directly. It writes data to a file specified by `args.output_file`.
+Code Description: The `main` function begins by opening the file specified in `args.output_file` in write mode. It then calls the `create_test_samples` function with a tuple containing the paths to the prompt file (`args.prompt_file`) and the retrieved entity file (`args.retrieved_entity_file`). This function is responsible for reading these files, processing their contents to generate structured test samples, and returning these samples as a single JSON-formatted string. The `main` function writes this string to the output file, appending a newline character at the end.
 
-### Detailed Explanation
-The `main` function performs the following operations:
-1. Opens an output file in write mode using the path provided in `args.output_file`.
-2. Calls the `create_test_samples` function with a tuple containing paths to `args.prompt_file` and `args.retrieved_entity_file`.
-3. Writes the result of `create_test_samples` (a string) followed by a newline character into the output file.
-
-### Relationship Description
-- **reference_letter**: The function calls `create_test_samples`, indicating that it is a caller in relation to this callee.
-- There is no explicit indication of callers to `main` from other parts of the project based on the provided information, so `referencer_content` cannot be confirmed.
-
-### Usage Notes and Refactoring Suggestions
-- **Limitations**: The function assumes that `args.output_file`, `args.prompt_file`, and `args.retrieved_entity_file` are correctly set up before calling `main`. It does not handle potential exceptions such as file access errors or invalid JSON formats.
-- **Edge Cases**: Consider scenarios where the output file cannot be written to, or when the input files do not exist or contain malformed data. Implementing error handling would improve robustness.
-- **Refactoring Suggestions**:
-  - **Extract Method**: If there are additional operations planned for `main` in the future (e.g., logging), consider extracting these into separate functions to maintain single responsibility.
-  - **Introduce Explaining Variable**: If the logic around file paths or the call to `create_test_samples` becomes more complex, introduce variables with descriptive names to clarify their purpose.
-  - **Error Handling**: Introduce try-except blocks to handle potential exceptions during file operations and JSON parsing.
-
-By following these guidelines, the function can be made more robust, maintainable, and easier to understand.
+Note: Usage of this function requires that the `args` object be properly configured with the paths to the prompt file, retrieved entity file, and output file. This setup is typically done through command-line arguments or configuration files in larger applications. The `main` function acts as a bridge between input data processing (handled by `create_test_samples`) and output data storage, ensuring that the generated test samples are saved correctly for further use, such as in code clone detection systems.
